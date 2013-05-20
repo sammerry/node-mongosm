@@ -1,0 +1,23 @@
+<relation id="1">
+  <tag k="type" v="multipolygon" />
+  <member type="way" id="1" role="outer" />
+  <member type="way" id="2" role="outer" />
+  <member type="way" id="3" role="outer" />
+  <member type="way" id="4" role="outer" />
+  <member type="way" id="5" role="inner" />
+  <member type="way" id="6" role="inner" />
+  <member type="way" id="7" role="inner" />
+  <member type="way" id="8" role="inner" />
+  <member type="way" id="9" role="inner" />
+  <member type="way" id="10" role="inner" />
+  <member type="way" id="11" role="inner" />
+  <member type="way" id="12" role="outer" />
+  <member type="way" id="13" role="outer" />
+  <member type="way" id="14" role="outer" />
+  <member type="way" id="15" role="outer" />
+  <member type="way" id="16" role="inner" />
+  <member type="way" id="17" role="inner" />
+  <member type="way" id="18" role="inner" />
+  <member type="way" id="19" role="inner" />
+  <member type="way" id="20" role="outer" />
+</relation>

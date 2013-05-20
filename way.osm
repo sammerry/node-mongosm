@@ -1,0 +1,15 @@
+  <way id="5090250" visible="true" timestamp="2009-01-19T19:07:25Z" version="8" changeset="816806" user="Blumpsy" uid="64226">
+    <nd ref="822403"/>
+    <nd ref="21533912"/>
+    <nd ref="821601"/>
+    <nd ref="21533910"/>
+    <nd ref="135791608"/>
+    <nd ref="333725784"/>
+    <nd ref="333725781"/>
+    <nd ref="333725774"/>
+    <nd ref="333725776"/>
+    <nd ref="823771"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Clipstone Street"/>
+    <tag k="oneway" v="yes"/>
+  </way>
