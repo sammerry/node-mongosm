@@ -5,7 +5,8 @@ This package will convert .osm files from Open Street Map and save / upsert new 
 
 ##Installation
 
-ensure you have mongoDB installed on your system and Install dependencies via npm. I have set my package versions to whats currently installed on my system. This has not been tested with other versions.
+ensure you have mongoDB installed on your system and Install dependencies via npm.
+The package.json versions have not been tested with other versions.
 
 ``` shell
 npm install -d
