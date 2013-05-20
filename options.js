@@ -1,6 +1,6 @@
 module.exports = {
   verbose: false,
-  filename: "KZ.osm",
+  filename: "example-osm/node.osm",
   upsert: false,
   xmlns:true,
   lowercase:true
