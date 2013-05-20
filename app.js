@@ -1,15 +1,21 @@
 var fs = require("fs"),
+
     strict = false,
     options = require("options.js"),
-    mongoose = require('./node_modules/mongoose');
+    mongoose = require("schema/index.js"),
+    entry;
 
+var saxStream = require("sax").createStream(strict, options);
 var db = mongoose.connect('mongodb://localhost/test');
+
+var Node = db.model('node'),
+    Way = db.model('way'),
+    Relation = db.model('relation');
+
 mongoose.connection.on('open', function () {
 
-  // on connection to db start parsing.
-  var saxStream = require("sax").createStream(strict, options);
   // TODO: add dots to show activity every 2 sec?
-  saxStream.on("opentag",appendData);
+  saxStream.on("opentag", parse);
   fs.createReadStream(options.filename)
     .pipe(saxStream);
 
@@ -23,65 +29,9 @@ mongoose.connection.on('open', function () {
 
 });
 
-var Node_Schema = mongoose.Schema({
-  _id: Number,
-  type: String,
-  loc: {
-    type: Object,
-    coordinates: {type: [Number], index: '2dsphere'}
-  },
-  version: Number,
-  uid: Number,
-  user: String,
-  changeset: Number,
-  timestamp: Date,
-  visible: Boolean,
-  tags: {}
-},{collection: "nodes" });
-mongoose.model('node', Node_Schema);
-var Node = db.model('node');
+function parse (xmlNode)  {
 
-var Way_Schema = mongoose.Schema({
-  _id: Number,
-  type: String,
-  loc: {
-    type: Object,
-    coordinates: [{ type: Number, ref: 'node' }]
-  },
-  version: Number,
-  uid: Number,
-  user: String,
-  changeset: Number,
-  timestamp: Date,
-  visible: Boolean,
-  tags: {}
-},{collection: "ways" });
-mongoose.model('Way', Way_Schema);
-var Way = db.model('Way');
-
-var Relation_Schema = mongoose.Schema({
-  _id: Number,
-  type: String,
-  loc: {
-    type: Object,
-    coordinates: [{}]
-  },
-  version: Number,
-  uid: Number,
-  user: String,
-  changeset: Number,
-  timestamp: Date,
-  visible: Boolean,
-  tags: {}
-},{collection: "relations" });
-mongoose.model('Relation', Relation_Schema);
-var Relation = db.model('Relation');
-
-
-var entry;
-function appendData (node)  {
-
-  switch(node.name)
+  switch(xmlNode.name)
   {
     
     case "node":
@@ -89,21 +39,21 @@ function appendData (node)  {
         save();
       }
       entry = new Node();
-      var lat = parseInt(node.attributes.lat.value);
-      var lng = parseInt(node.attributes.lon.value);
+      var lat = parseInt(xmlNode.attributes.lat.value);
+      var lng = parseInt(xmlNode.attributes.lon.value);
       entry.set("loc.type", "Point");
       entry.set("loc.coordinates", [lat,lng]);
-      prepBaseNode(node);
+      prepBaseNode(xmlNode);
       break;
 
     case "tag":
-      var key   = "tags." + node.attributes.k.value.replace(/:/, "."),
-          value = node.attributes.v.value;
+      var key   = "tags." + xmlNode.attributes.k.value.replace(/:/, "."),
+          value = xmlNode.attributes.v.value;
       entry.set(key, value);
       break;
 
     case "nd":
-      var ref = node.attributes.ref.value;
+      var ref = xmlNode.attributes.ref.value;
       var coord = entry.get("loc.coordinates", Array);
       coord.push(ref);
       entry.set("loc.coordinates",  coord);
@@ -115,14 +65,14 @@ function appendData (node)  {
       }
       entry = new Way();
       entry.set("loc", {type:"LineString", coordinates: []});
-      prepBaseNode(node);
+      prepBaseNode(xmlNode);
       break;
 
     case "member":
       var val = {}
-      for (var attribute in node.attributes) {
+      for (var attribute in xmlNode.attributes) {
         // TODO: this does not account for namespacing
-        val[attribute] = node.attributes[attribute].value;
+        val[attribute] = xmlNode.attributes[attribute].value;
       }
       var coord = entry.get("loc.coordinates", Array);
 
@@ -137,39 +87,36 @@ function appendData (node)  {
       }
       entry = new Relation();
       entry.set("loc", {type:"MultiPolygon", coordinates: []});
-      prepBaseNode(node);
+      prepBaseNode(xmlNode);
       break;
 
     case "osm":
       var val = {};
-      for (var attribute in node.attributes) {
-        val[attribute] = node.attributes[attribute].value;
+      for (var attribute in xmlNode.attributes) {
+        val[attribute] = xmlNode.attributes[attribute].value;
       }
-      console.log("OSM Data::: ", val)
       break;
 
     case "bounds":
       var val = {};
-      for (var attribute in node.attributes) {
-        val[attribute] = node.attributes[attribute].value;
+      for (var attribute in xmlNode.attributes) {
+        val[attribute] = xmlNode.attributes[attribute].value;
       }
-      console.log("bounds::: ", val)
       break;
 
-
     default:
-      console.log(node);
+      console.log(xmlNode);
       break;
 
   }
 }
 
-function prepBaseNode (node) {    
-  entry.set("_id",  node.attributes.id.value);
-  entry.set("type",  node.name);
-  for (var attribute in node.attributes) {
+function prepBaseNode (xmlNode) {    
+  entry.set("_id",  xmlNode.attributes.id.value);
+  entry.set("type",  xmlNode.name);
+  for (var attribute in xmlNode.attributes) {
     if (attribute == "id" || attribute == "lat" || attribute == "lon") continue;
-    entry.set(attribute, node.attributes[attribute].value);
+    entry.set(attribute, xmlNode.attributes[attribute].value);
   }
 }
 
@@ -179,7 +126,6 @@ function shutDown() {
 }
 
 function save() {
-    
   function saveCB( err ) {
     if (!!err) console.log(err);
     if (!!options.verbose) {
@@ -197,9 +143,7 @@ function save() {
       .findOneAndUpdate(query, value, options, saveCB);
   }
 
-  // TODO: determine if points are a polygon or line
-  // then save loc.type as LineString, Polygon or Point;
-
+  // TODO: determine and save loc.type as LineString, Polygon or Point
   if (!!options.upsert) {
     upsert();
   } else {
