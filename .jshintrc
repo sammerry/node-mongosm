@@ -1,0 +1,12 @@
+{
+  "bitwise": true,
+  "eqeqeq": true,
+  "globals": { 
+    "MY_GLOBAL": false,
+    "require": false,
+    "console": false,
+    "module": false,
+    "exports": false,
+    "__dirname": false
+  }
+}

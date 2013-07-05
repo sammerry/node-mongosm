@@ -3,12 +3,15 @@ var mongoose = require('./../node_modules/mongoose');
 
 module.exports = mongoose;
 
-var Node_Schema = mongoose.Schema({
+var Schema = mongoose.Schema;
+
+var Node_Schema = Schema({
   _id: Number,
   type: String,
   loc: {
     type: Object,
-    coordinates: {type: [Number], index: '2dsphere'}
+    coordinates: [Number],
+    index: "2dsphere"
   },
   version: Number,
   uid: Number,
@@ -20,13 +23,10 @@ var Node_Schema = mongoose.Schema({
 },{collection: "nodes" });
 mongoose.model('node', Node_Schema);
 
-var Way_Schema = mongoose.Schema({
+var Way_Schema = Schema({
   _id: Number,
   type: String,
-  loc: {
-    type: Object,
-    coordinates: [{ type: Number, ref: 'node' }]
-  },
+  loc: [{type: Number, ref: "node"}],
   version: Number,
   uid: Number,
   user: String,
@@ -38,13 +38,10 @@ var Way_Schema = mongoose.Schema({
 mongoose.model('way', Way_Schema);
 
 
-var Relation_Schema = mongoose.Schema({
+var Relation_Schema = Schema({
   _id: Number,
   type: String,
-  loc: {
-    type: Object,
-    coordinates: [{}]
-  },
+  loc: [{}],
   version: Number,
   uid: Number,
   user: String,

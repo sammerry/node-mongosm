@@ -1,16 +1,22 @@
-var fs = require("fs"),
+/* jshint -W004 */
 
-    strict = false,
+var fs = require("fs"),
     options = require("options.js"),
     mongoose = require("schema/index.js"),
     entry;
 
-var saxStream = require("sax").createStream(strict, options);
-var db = mongoose.connect('mongodb://localhost/test');
+var saxStream = require("sax").createStream(options.strict, options);
+var db = mongoose.connect('mongodb://' + options.host + '/' + options.database);
 
 var Node = db.model('node'),
     Way = db.model('way'),
     Relation = db.model('relation');
+
+/* // add the commandline arguments
+  process.argv.forEach(function (val, index, array) {
+    console.log(index + ': ' + val);
+  });
+*/
 
 mongoose.connection.on('open', function () {
 
@@ -22,9 +28,9 @@ mongoose.connection.on('open', function () {
   saxStream.on("end", shutDown);
 
   saxStream.on("error", function (e) {
-    console.error("error!", e)
-    this._parser.error = null
-    this._parser.resume()
+    console.error("error!", e);
+    this._parser.error = null;
+    this._parser.resume();
   });
 
 });
@@ -39,10 +45,11 @@ function parse (xmlNode)  {
         save();
       }
       entry = new Node();
-      var lat = parseInt(xmlNode.attributes.lat.value);
-      var lng = parseInt(xmlNode.attributes.lon.value);
+      var lat = parseFloat( xmlNode.attributes.lat.value );
+      var lng = parseFloat( xmlNode.attributes.lon.value );
+      entry.set("_id", xmlNode.attributes.id.value);
+      entry.set("loc.coordinates", [lng,lat]);
       entry.set("loc.type", "Point");
-      entry.set("loc.coordinates", [lat,lng]);
       prepBaseNode(xmlNode);
       break;
 
@@ -54,7 +61,7 @@ function parse (xmlNode)  {
 
     case "nd":
       var ref = xmlNode.attributes.ref.value;
-      var coord = entry.get("loc.coordinates", Array);
+      var coord = entry.get("loc", Array) || [];
       coord.push(ref);
       entry.set("loc.coordinates",  coord);
       break;
@@ -64,17 +71,18 @@ function parse (xmlNode)  {
         save();
       }
       entry = new Way();
-      entry.set("loc", {type:"LineString", coordinates: []});
+      entry.set("_id", xmlNode.attributes.id.value);
+      entry.set("loc",[]);
       prepBaseNode(xmlNode);
       break;
 
     case "member":
-      var val = {}
+      var val = {};
       for (var attribute in xmlNode.attributes) {
         // TODO: this does not account for namespacing
         val[attribute] = xmlNode.attributes[attribute].value;
       }
-      var coord = entry.get("loc.coordinates", Array);
+      var coord = entry.get("loc.coordinates", Array) || [];
 
       // TODO: this should be an object not a string
       coord.push(JSON.stringify(val));
@@ -86,6 +94,7 @@ function parse (xmlNode)  {
         save();
       }
       entry = new Relation();
+      entry.set("_id", xmlNode.attributes.id.value);
       entry.set("loc", {type:"MultiPolygon", coordinates: []});
       prepBaseNode(xmlNode);
       break;
@@ -107,15 +116,21 @@ function parse (xmlNode)  {
     default:
       console.log(xmlNode);
       break;
-
   }
+  console.log(entry);
 }
 
-function prepBaseNode (xmlNode) {    
-  entry.set("_id",  xmlNode.attributes.id.value);
+function prepBaseNode (xmlNode) { 
+
+  if (!!options.useOriginalID) {
+    entry.set("_id",  xmlNode.attributes.id.value);
+  } else {
+    entry.set("osm_id",  xmlNode.attributes.id.value);
+  }
+
   entry.set("type",  xmlNode.name);
   for (var attribute in xmlNode.attributes) {
-    if (attribute == "id" || attribute == "lat" || attribute == "lon") continue;
+    if (attribute === "id" || attribute === "lat" || attribute === "lon") continue;
     entry.set(attribute, xmlNode.attributes[attribute].value);
   }
 }
@@ -126,11 +141,17 @@ function shutDown() {
 }
 
 function save() {
+  function handleError( err ) {
+    if (!!options.suppressErrors) {
+       console.log(err);
+    }
+  }
+
   function saveCB( err ) {
-    if (!!err) console.log(err);
+    if (!!err) handleError(err);
     if (!!options.verbose) {
       console.log(entry);
-      console.log(entry,"\n\n################################################")
+      console.log(entry,"\n\n################################################");
     }
   }
   function upsert () {

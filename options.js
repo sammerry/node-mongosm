@@ -1,7 +1,12 @@
 module.exports = {
-  verbose: false,
-  filename: "example-osm/node.osm",
+  verbose: true,
+  filename: "example-osm/way.osm",//"alaska-latest.osm",
+  host: "localhost",
+  database: "ak",
+  suppressErrors: false,
+  useOriginalID: false,
   upsert: false,
-  xmlns:true,
+  xmlns: true,
+  strict: false,
   lowercase:true
 };

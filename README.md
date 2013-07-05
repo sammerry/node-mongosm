@@ -27,3 +27,4 @@ node app
 - Retry once on insert failure
 - Commandline arguments.
 - Testing vs sample .osm files
+- Support for multiple files
