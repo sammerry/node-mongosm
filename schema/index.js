@@ -26,7 +26,7 @@ mongoose.model('node', Node_Schema);
 var Way_Schema = Schema({
   _id: Number,
   type: String,
-  loc: [{type: Number, ref: "node"}],
+  loc: [String],
   version: Number,
   uid: Number,
   user: String,
@@ -41,7 +41,7 @@ mongoose.model('way', Way_Schema);
 var Relation_Schema = Schema({
   _id: Number,
   type: String,
-  loc: [{}],
+  loc: [String],
   version: Number,
   uid: Number,
   user: String,
