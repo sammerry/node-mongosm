@@ -17,7 +17,23 @@ In options.js set the {filename: "your_file.osm"} and run the app.
 You will also want to set {upsert: true/false} to your needs.
 
 ```
-node app
+node mongosm
+```
+
+alternatively you can run it from the commandline with
+```
+./mongosm -v -f "your-file.osm"
+```
+
+##Command-line Flags
+```
+  -v    verbose
+  -f    file path
+  -l    to lowercase
+  -u    upcert all entries : defaults to save
+  -host host name
+  -db   database
+  -h    help
 ```
 
 ##Wishlist
