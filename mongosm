@@ -9,7 +9,11 @@ var fs = require("fs"),
     entry;
 
 var saxStream = require("sax").createStream(options.strict, options);
-var db = mongoose.connect('mongodb://' + options.host + '/' + options.database);
+var db = mongoose.connect(serverString());
+
+function serverString () {
+  return 'mongodb://' + options.host + ':' + options.port + '/' + options.database;
+}
 
 var Node = db.model('node'),
     Way = db.model('way'),
@@ -48,6 +52,7 @@ process.argv.forEach(function (val, index, array) {
       ["-l", "to lowercase"],
       ["-u", "upcert all entries : defaults to save"],
       ["-host", "host name"],
+      ["-port", "port"],
       ["-db", "database"],
       ["-h", "help"]
     ]);
@@ -69,6 +74,9 @@ process.argv.forEach(function (val, index, array) {
         break;
       case "-host":
         options.host = array.splice(index+1,1)[0];
+        break;
+      case "-port":
+        options.port = array.splice(index+1,1)[0];
         break;
       case "-db":
         options.database = array.splice(index+1,1)[0];
@@ -163,7 +171,6 @@ function parse (xmlNode)  {
       console.log(xmlNode);
       break;
   }
-  console.log(entry);
 }
 
 function prepBaseNode (xmlNode) { 
@@ -210,7 +217,6 @@ function save() {
       .findOneAndUpdate(query, value, options, saveCB);
   }
 
-  // TODO: determine and save loc.type as LineString, Polygon or Point
   if (!!options.upsert) {
     upsert();
   } else {
