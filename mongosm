@@ -15,13 +15,38 @@ var Node = db.model('node'),
     Way = db.model('way'),
     Relation = db.model('relation');
 
-process.argv.forEach(function (val, index, array) {
+mongoose.connection.on('open', function () {
 
+  // TODO: add dots to show activity every 2 sec?
+  saxStream.on("opentag", parse);
+  fs.createReadStream(options.filename)
+    .pipe(saxStream);
+
+  saxStream.on("end", shutDown);
+
+  saxStream.on("error", function (e) {
+    console.error("error!", e);
+    this._parser.error = null;
+    this._parser.resume();
+  });
+
+});
+
+mongoose.connection.on('error', function (err) {
+  console.log(err);
+  function reconnect () {
+    db = mongoose.connect('mongodb://' + options.host + '/' + options.database);
+  };
+  var id = setTimeout(reconnect, 5000)
+});
+
+process.argv.forEach(function (val, index, array) {
   function logHelp () {
     console.log([
       ["-v", "verbose"],
       ["-f", "file path"],
       ["-l", "to lowercase"],
+      ["-u", "upcert all entries : defaults to save"],
       ["-host", "host name"],
       ["-db", "database"],
       ["-h", "help"]
@@ -35,6 +60,9 @@ process.argv.forEach(function (val, index, array) {
         break;
       case "-l":
         options.lowercase = true;
+        break;
+      case "-u":
+        options.upsert = true;
         break;
       case "-f":
         options.filename = array.splice(index+1,1)[0];
@@ -51,23 +79,6 @@ process.argv.forEach(function (val, index, array) {
         break;
     }
   }
-});
-
-mongoose.connection.on('open', function () {
-
-  // TODO: add dots to show activity every 2 sec?
-  saxStream.on("opentag", parse);
-  fs.createReadStream(options.filename)
-    .pipe(saxStream);
-
-  saxStream.on("end", shutDown);
-
-  saxStream.on("error", function (e) {
-    console.error("error!", e);
-    this._parser.error = null;
-    this._parser.resume();
-  });
-
 });
 
 function parse (xmlNode)  {
