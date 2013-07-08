@@ -1,3 +1,6 @@
+#!/usr/bin/env node
+
+
 /* jshint -W004 */
 
 var fs = require("fs"),
@@ -12,11 +15,43 @@ var Node = db.model('node'),
     Way = db.model('way'),
     Relation = db.model('relation');
 
-/* // add the commandline arguments
-  process.argv.forEach(function (val, index, array) {
-    console.log(index + ': ' + val);
-  });
-*/
+process.argv.forEach(function (val, index, array) {
+
+  function logHelp () {
+    console.log([
+      ["-v", "verbose"],
+      ["-f", "file path"],
+      ["-l", "to lowercase"],
+      ["-host", "host name"],
+      ["-db", "database"],
+      ["-h", "help"]
+    ]);
+  }
+
+  if (index > 1) {
+    switch (val) {
+      case "-v":
+        options.verbose = true;
+        break;
+      case "-l":
+        options.lowercase = true;
+        break;
+      case "-f":
+        options.filename = array.splice(index+1,1)[0];
+        break;
+      case "-host":
+        options.host = array.splice(index+1,1)[0];
+        break;
+      case "-db":
+        options.database = array.splice(index+1,1)[0];
+        break;
+      default:
+        logHelp();
+        process.kill()
+        break;
+    }
+  }
+});
 
 mongoose.connection.on('open', function () {
 
