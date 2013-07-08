@@ -25,6 +25,5 @@ node app
 - Time Stamp Bucketing
 - Better handling for relation refs
 - Retry once on insert failure
-- Commandline arguments.
 - Testing vs sample .osm files
 - Support for multiple files
