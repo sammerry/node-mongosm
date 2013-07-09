@@ -36,6 +36,34 @@ alternatively you can run it from the commandline with
   -h    help
 ```
 
+## Options
+```
+OSM XML includes several attributes on the nodes, ways and relations:
+   timestamp
+   user
+   uid
+   visible
+   version
+   changeset
+
+By default, all of these attributes are imported in to the database. To alter this, you can use:
+```
+   keptAttributes: ['attribute1', 'attribute2', ...]
+   ignoredAttributes: ['attribute1', 'attribute2', ...]
+```
+For example, to only keep the user attribute for ways, you would have in the options:
+```
+  ways: {
+    keptAttributes: ['user']
+  }
+```
+To remove the timestamp and visible attributes for nodes, you would have in the options:
+```
+  node: {
+    ignoredAttributes: ['user']
+  }
+```
+
 ##Wishlist
 
 - Time Stamp Bucketing

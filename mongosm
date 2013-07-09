@@ -8,6 +8,30 @@ var fs = require("fs"),
     mongoose = require("schema/index.js"),
     entry;
 
+// Options validation
+
+function validateObjectOptions(object) {
+  if ('keptAttributes' in object) {
+    if ('ignoredAttributes' in object) {
+      console.log("warning: removing ignoredAttributes as you have given the keptAttributes");
+      delete object.ignoredAttributes;
+    }
+  } else {
+    if (!('ignoredAttributes' in object)) {
+      object.ignoredAttributes = [];
+    }
+  }
+}
+
+['node', 'way', 'relation'].forEach(function(object) {
+  if (options[object] == undefined) {
+    options[object] = { ignoredAttributes: [] };
+  } else {
+    validateObjectOptions(options[object]);
+  }
+});
+
+
 var saxStream = require("sax").createStream(options.strict, options);
 var db = mongoose.connect(serverString());
 
@@ -182,8 +206,18 @@ function prepBaseNode (xmlNode) {
   }
 
   entry.set("type",  xmlNode.name);
+  var keptAttributes = options[xmlNode.name].keptAttributes;
+  var ignoredAttributes = options[xmlNode.name].ignoredAttributes;
   for (var attribute in xmlNode.attributes) {
+    // Has it already been used, if so, skip
     if (attribute === "id" || attribute === "lat" || attribute === "lon") continue;
+    // Are we excluding some attributes
+    if (keptAttributes != undefined) {
+      // Is it one that is excluded, if so, skip
+      if (!(attribute in keptAttributes)) continue;
+    } else { // Some attributes are to be excluded
+      if (attribute in ignoredAttributes) continue;
+    }
     entry.set(attribute, xmlNode.attributes[attribute].value);
   }
 }
