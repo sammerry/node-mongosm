@@ -45,7 +45,7 @@ alternatively you can run it from the commandline with
 
 ## Options
 
-Commandline options are generally preferred, but option defaults may be manually set in the [options.js][https://github.com/sammerry/node-mongosm/blob/master/options.js] file.
+Commandline options are generally preferred, but option defaults may be manually set in the [options.js](https://github.com/sammerry/node-mongosm/blob/master/options.js) file.
 
 Standard Options:
 ```
