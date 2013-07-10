@@ -57,60 +57,6 @@ mongoose.connection.on('open', function () {
     this._parser.error = null;
     this._parser.resume();
   });
-
-});
-
-mongoose.connection.on('error', function (err) {
-  console.log(err);
-  function reconnect () {
-    db = mongoose.connect('mongodb://' + options.host + '/' + options.database);
-  };
-  var id = setTimeout(reconnect, 5000)
-});
-
-process.argv.forEach(function (val, index, array) {
-  function logHelp () {
-    console.log([
-      ["-v", "verbose"],
-      ["-f", "file path"],
-      ["-l", "to lowercase"],
-      ["-u", "upcert all entries : defaults to save"],
-      ["-host", "host name"],
-      ["-port", "port"],
-      ["-db", "database"],
-      ["-h", "help"]
-    ]);
-  }
-
-  if (index > 1) {
-    switch (val) {
-      case "-v":
-        options.verbose = true;
-        break;
-      case "-l":
-        options.lowercase = true;
-        break;
-      case "-u":
-        options.upsert = true;
-        break;
-      case "-f":
-        options.filename = array.splice(index+1,1)[0];
-        break;
-      case "-host":
-        options.host = array.splice(index+1,1)[0];
-        break;
-      case "-port":
-        options.port = array.splice(index+1,1)[0];
-        break;
-      case "-db":
-        options.database = array.splice(index+1,1)[0];
-        break;
-      default:
-        logHelp();
-        process.kill()
-        break;
-    }
-  }
 });
 
 function parse (xmlNode)  {
