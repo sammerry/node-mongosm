@@ -1,13 +1,22 @@
 module.exports = {
   verbose: false,
-  filename: "example-osm/way.osm",//"alaska-latest.osm",
+  filename: "example-osm/way.osm",
   host: "localhost",
   port: "27017",
-  database: "ak",
+  database: "test",
   suppressErrors: false,
   useOriginalID: false,
   upsert: false,
   xmlns: true,
   strict: false,
-  lowercase:true
+  lowercase:true,
+  node: {
+    ignoreAttributes: []
+  },
+  way: {
+    ignoreAttributes: []
+  },
+  relation: {
+    ignoreAttributes: []
+  }
 };
