@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "mongoose": "3.6.11",
+        "mongoose": "*",
         "sax": "0.5.4"
     },
     "description": "upload .osm file to mongodb",
