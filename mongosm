@@ -132,7 +132,8 @@ function prepBaseNode (xmlNode) {
 
 function shutDown() {
   save();
-  console.log("EOF: Ctrl-C to Exit")
+  process.stdout.write("\n\nEOF: Ctrl-C to Exit\n\n");
+
   // on small files this closes early
   // implementing manual exit
   // mongoose.connection.close();
