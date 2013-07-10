@@ -16,6 +16,9 @@ npm install -d
 In options.js set the {filename: "your_file.osm"} and run the app.
 You will also want to set {upsert: true/false} to your needs.
 
+note: if upsert = false, documents which already exist in the database will not be modefied
+and will not be printed out in verbose mode.
+
 ```
 node mongosm
 ```
