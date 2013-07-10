@@ -3,11 +3,11 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "mongoose": "*",
+        "mongoose": "3.6.14",
         "sax": "0.5.4"
     },
-    "description": "upload .osm file to mongodb",
-    "main": "convert-upload.js",
+    "description": "parses and uploads .osm file elemetns to mongodb instance",
+    "main": "mongosm",
     "scripts": {
         "start": "node convert-upload.js",
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,5 +17,5 @@
         "npm": "1.2.21"
     },
     "author": "Sam Merry",
-    "license": "BSD"
+    "license": "MIT"
 }
