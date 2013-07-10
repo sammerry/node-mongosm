@@ -3,19 +3,7 @@ options = require("options.js");
 module.exports = function () {
   process.argv.forEach(function (val, index, array) {
     function logHelp () {
-      console.log([
-        ["-v", "verbose"],
-        ["-f", "file path"],
-        ["-l", "to lowercase"],
-        ["-u", "upcert all entries : defaults to save"],
-        ["-s", "suppress errors"],
-        ["-host", "host name"],
-        ["-port", "port"],
-        ["-k", "removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp"],
-        ["-i", "includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp"],
-        ["-db", "database"],
-        ["-h", "help"]
-      ]);
+      process.stdout.write("\n-v verbose\n\-f file path\n-l to lowercase\n-u upcert all entries : defaults to save\n-s suppress errors\n-host host name\n-port port\n-k removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp\n-i includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp\n-db database\n-h help\n\n");
     }
 
     if (index > 1) {
