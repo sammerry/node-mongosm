@@ -4,44 +4,17 @@
 /* jshint -W004 */
 
 var fs = require("fs"),
-    options = require("options.js"),
-    mongoose = require("schema/index.js"),
-    entry;
+    options = require('options.js');
 
-// Options validation
+var mongoose = require("schema/index.js")(options),
+    saxStream = require("sax").createStream(options.strict, options);
 
-function validateObjectOptions(object) {
-  if ('keptAttributes' in object) {
-    if ('ignoredAttributes' in object) {
-      console.log("warning: removing ignoredAttributes as you have given the keptAttributes");
-      delete object.ignoredAttributes;
-    }
-  } else {
-    if (!('ignoredAttributes' in object)) {
-      object.ignoredAttributes = [];
-    }
-  }
-}
+require('commandline.js')(options);
 
-['node', 'way', 'relation'].forEach(function(object) {
-  if (options[object] == undefined) {
-    options[object] = { ignoredAttributes: [] };
-  } else {
-    validateObjectOptions(options[object]);
-  }
-});
-
-
-var saxStream = require("sax").createStream(options.strict, options);
-var db = mongoose.connect(serverString());
-
-function serverString () {
-  return 'mongodb://' + options.host + ':' + options.port + '/' + options.database;
-}
-
-var Node = db.model('node'),
-    Way = db.model('way'),
-    Relation = db.model('relation');
+var Node = mongoose.db.model('node');
+var Way = mongoose.db.model('way');
+var Relation = mongoose.db.model('relation');
+var entry;
 
 mongoose.connection.on('open', function () {
 
@@ -144,7 +117,6 @@ function parse (xmlNode)  {
 }
 
 function prepBaseNode (xmlNode) { 
-
   if (!!options.useOriginalID) {
     entry.set("_id",  xmlNode.attributes.id.value);
   } else {
@@ -152,41 +124,21 @@ function prepBaseNode (xmlNode) {
   }
 
   entry.set("type",  xmlNode.name);
-  var keptAttributes = options[xmlNode.name].keptAttributes;
-  var ignoredAttributes = options[xmlNode.name].ignoredAttributes;
   for (var attribute in xmlNode.attributes) {
-    // Has it already been used, if so, skip
     if (attribute === "id" || attribute === "lat" || attribute === "lon") continue;
-    // Are we excluding some attributes
-    if (keptAttributes != undefined) {
-      // Is it one that is excluded, if so, skip
-      if (!(attribute in keptAttributes)) continue;
-    } else { // Some attributes are to be excluded
-      if (attribute in ignoredAttributes) continue;
-    }
     entry.set(attribute, xmlNode.attributes[attribute].value);
   }
 }
 
 function shutDown() {
   save();
-  mongoose.connection.close();
+  console.log("EOF: Ctrl-C to Exit")
+  // on small files this closes early
+  // implementing manual exit
+  // mongoose.connection.close();
 }
 
 function save() {
-  function handleError( err ) {
-    if (!!options.suppressErrors) {
-       console.log(err);
-    }
-  }
-
-  function saveCB( err ) {
-    if (!!err) handleError(err);
-    if (!!options.verbose) {
-      console.log(entry);
-      console.log(entry,"\n\n################################################");
-    }
-  }
   function upsert () {
     var options = {upsert: true};
     var value = entry.toJSON();
@@ -200,7 +152,7 @@ function save() {
   if (!!options.upsert) {
     upsert();
   } else {
-    entry.save(saveCB);
+    entry.save();
   }
 }
 
