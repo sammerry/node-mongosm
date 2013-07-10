@@ -55,7 +55,7 @@ function parse (xmlNode)  {
       break;
 
     case "nd":
-      wayNodeRefs.push(xmlNode.attributes.ref.value);
+      wayNodeRefs.push(parseInt(xmlNode.attributes.ref.value));
       // These refs are translated to points in the closetag function
       break;
 
@@ -116,7 +116,8 @@ function closetag (tagName) {
         var counter = nodes.length;
         for (var index in nodes) {
           (function(index) {
-            Node.findById(parseInt(nodes[index]), function(err, node) {
+            var query = options.useOriginalID ? { _id: nodes[index] } : { osm_id: nodes[index] };
+            Node.findOne(query, function(err, node) {
               if (err) { console.log(err); return; }
 
               if (node == null) {
@@ -152,7 +153,7 @@ function closetag (tagName) {
 }
 
 function prepBaseNode (xmlNode) {
-  if (!!options.useOriginalID) {
+  if (options.useOriginalID == true) {
     entry.set("_id",  xmlNode.attributes.id.value);
   } else {
     entry.set("osm_id",  xmlNode.attributes.id.value);
@@ -178,7 +179,7 @@ function shutDown() {
 function save(model, object) {
   if (options.upsert == true) {
     var value = object.toObject();
-    var query = {_id: value._id};
+    var query = options.useOriginalID ? { _id: value._id } : { osm_id: value.osm_id };
     delete value._id;
     model.findOneAndUpdate(query, value, {upsert: true}, function(err) {
       if (err)

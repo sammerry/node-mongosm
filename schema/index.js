@@ -54,6 +54,7 @@ module.exports = function (options) {
 
   var Node_Schema = Schema({
     _id: Number,
+    osm_id: { type:Number, unique: true },
     updated: {type:Date, default: Date.now},
     type: {type:String, default:"node"},
     loc: {
@@ -75,6 +76,7 @@ module.exports = function (options) {
 
   var Way_Schema = Schema({
     _id: Number,
+    osm_id: { type:Number, unique: true },
     updated: {type:Date, default: Date.now},
     type: {type:String, default:"way"},
     loc: {
@@ -95,6 +97,7 @@ module.exports = function (options) {
 
   var Relation_Schema = Schema({
     _id: Number,
+    osm_id: { type:Number, unique: true },
     updated: {type:Date, default: Date.now},
     type: {type:String, default:"relation"},
     loc: [String],
