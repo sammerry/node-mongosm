@@ -20,6 +20,7 @@ mongoose.connection.on('open', function () {
 
   // TODO: add dots to show activity every 2 sec?
   saxStream.on("opentag", parse);
+  saxStream.onclosetag = closetag;
   fs.createReadStream(options.filename)
     .pipe(saxStream);
 
@@ -32,19 +33,16 @@ mongoose.connection.on('open', function () {
   });
 });
 
+var wayNodeRefs = [];
+
 function parse (xmlNode)  {
 
   switch(xmlNode.name)
   {
-    
     case "node":
-      if (!!entry) {
-        save();
-      }
       entry = new Node();
       var lat = parseFloat( xmlNode.attributes.lat.value );
       var lng = parseFloat( xmlNode.attributes.lon.value );
-      entry.set("_id", xmlNode.attributes.id.value);
       entry.set("loc.coordinates", [lng,lat]);
       entry.set("loc.type", "Point");
       prepBaseNode(xmlNode);
@@ -57,20 +55,14 @@ function parse (xmlNode)  {
       break;
 
     case "nd":
-      var ref = xmlNode.attributes.ref.value;
-      var coord = entry.get("loc", Array) || [];
-      coord.push(ref);
-      entry.set("loc.coordinates",  coord);
+      wayNodeRefs.push(xmlNode.attributes.ref.value);
+      // These refs are translated to points in the closetag function
       break;
 
     case "way":
-      if (!!entry) {
-        save();
-      }
       entry = new Way();
-      entry.set("_id", xmlNode.attributes.id.value);
-      entry.set("loc",[]);
       prepBaseNode(xmlNode);
+      wayNodeRefs = [];
       break;
 
     case "member":
@@ -87,9 +79,6 @@ function parse (xmlNode)  {
       break;
 
     case "relation":
-      if (!!entry) {
-        save();
-      }
       entry = new Relation();
       entry.set("_id", xmlNode.attributes.id.value);
       entry.set("loc", {type:"MultiPolygon", coordinates: []});
@@ -116,7 +105,53 @@ function parse (xmlNode)  {
   }
 }
 
-function prepBaseNode (xmlNode) { 
+function closetag (tagName) {
+  switch(tagName)
+  {
+    case "node":
+      save(Node, entry);
+      break;
+    case "way":
+      (function(way, nodes) {
+        var counter = nodes.length;
+        for (var index in nodes) {
+          (function(index) {
+            Node.findById(parseInt(nodes[index]), function(err, node) {
+              if (err) { console.log(err); return; }
+
+              if (node == null) {
+                console.log("node " + nodes[index] + " not found, skiping way " + way._id);
+                return;
+              }
+
+              nodes[index] = node.loc.coordinates;
+
+              counter--;
+              if (counter == 0) {
+                // Check if this is a polygon (closed circular way)
+                var first = nodes[0];
+                var last = nodes.slice(-1)[0];
+
+                if (first[0] === last[0] && first[1] === last[1]) {
+                  way.loc = { type: 'Polygon', coordinates: [nodes] };
+                } else { // This is a LineString
+                  way.loc = { type: 'LineString', coordinates: nodes };
+                }
+
+                save(Way, way);
+              }
+            });
+          })(index);
+        }
+        })(entry, wayNodeRefs);
+      break;
+    case "relation":
+      save(Relation, relation);
+      break;
+  }
+}
+
+function prepBaseNode (xmlNode) {
   if (!!options.useOriginalID) {
     entry.set("_id",  xmlNode.attributes.id.value);
   } else {
@@ -131,7 +166,6 @@ function prepBaseNode (xmlNode) {
 }
 
 function shutDown() {
-  save();
   process.stdout.write("\n\nEOF: Ctrl-C to Exit\n\n");
 
   // on small files this closes early
@@ -139,21 +173,22 @@ function shutDown() {
   // mongoose.connection.close();
 }
 
-function save() {
-  function upsert () {
-    var options = {upsert: true};
-    var value = entry.toJSON();
+// Saves a object (node, way or relation), the coresponding model (Node, Way, or Relation)
+// should also be given as this is used to update (if required).
+function save(model, object) {
+  if (options.upsert == true) {
+    var value = object.toObject();
     var query = {_id: value._id};
     delete value._id;
-    mongoose
-      .models[entry.type]
-      .findOneAndUpdate(query, value, options, saveCB);
-  }
-
-  if (!!options.upsert) {
-    upsert();
+    model.findOneAndUpdate(query, value, {upsert: true}, function(err) {
+      if (err)
+        console.log(err);
+    });
   } else {
-    entry.save();
+    object.save(function(err) {
+      if (err)
+        console.log(err);
+    });
   }
 }
 

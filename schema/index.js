@@ -77,7 +77,10 @@ module.exports = function (options) {
     _id: Number,
     updated: {type:Date, default: Date.now},
     type: {type:String, default:"way"},
-    loc: [String],
+    loc: {
+      type: { type: String },
+      coordinates: { type: [] },
+    },
     version: Number,
     uid: Number,
     user: String,
