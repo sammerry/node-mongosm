@@ -27,42 +27,45 @@ alternatively you can run it from the commandline with
 
 ##Command-line Flags
 ```
-  -v    verbose
-  -f    file path
-  -l    to lowercase
-  -u    upcert all entries : defaults to save
+  -v verbose
+  -f file path
+  -l to lowercase
+  -u upcert all entries : defaults to save
+  -s suppress errors
   -host host name
-  -db   database
-  -h    help
+  -port port
+  -k document filter: removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
+  -i document filter: includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp
+  -db database
+  -h help
 ```
 
 ## Options
-```
-OSM XML includes several attributes on the nodes, ways and relations:
-   timestamp
-   user
-   uid
-   visible
-   version
-   changeset
 
-By default, all of these attributes are imported in to the database. To alter this, you can use:
+Commandline options are generally preferred, but option defaults may be manually set in the [options.js][https://github.com/sammerry/node-mongosm/blob/master/options.js] file.
+
+Standard Options:
 ```
-   keptAttributes: ['attribute1', 'attribute2', ...]
-   ignoredAttributes: ['attribute1', 'attribute2', ...]
+  verbose: false
+  filename: "example-osm/way.osm"
+  host: "localhost"
+  port: "27017"
+  database: "test"
+  suppressErrors: false
+  useOriginalID: false
+  upsert: false
+  xmlns: true
+  strict: false
+  lowercase:true
 ```
-For example, to only keep the user attribute for ways, you would have in the options:
+
+Document Filter Options:
 ```
-  ways: {
-    keptAttributes: ['user']
-  }
+  ignoreAttributes: []  // items to excluded
+  keepAttributes: [] // strict list of items to include
 ```
-To remove the timestamp and visible attributes for nodes, you would have in the options:
-```
-  node: {
-    ignoredAttributes: ['user']
-  }
-```
+
+only one document filter type should be needed
 
 ##Wishlist
 
