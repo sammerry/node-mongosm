@@ -14,7 +14,9 @@ module.exports = {
     ignoreAttributes: []
   },
   way: {
-    ignoreAttributes: []
+    ignoreAttributes: [],
+    populateGeometry: true,
+    nodeIdList: true
   },
   relation: {
     ignoreAttributes: []

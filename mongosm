@@ -42,7 +42,6 @@ function parse (xmlNode)  {
       var lat = parseFloat( xmlNode.attributes.lat.value );
       var lng = parseFloat( xmlNode.attributes.lon.value );
       entry.set("loc.coordinates", [lng,lat]);
-      entry.set("loc.type", "Point");
       prepBaseNode(xmlNode);
       break;
 
@@ -53,14 +52,12 @@ function parse (xmlNode)  {
       break;
 
     case "nd":
-      entry.nodes.push(parseInt(xmlNode.attributes.ref.value));
-      // These refs are translated to points in the closetag function
+      entry.loc.nodes.push(parseInt(xmlNode.attributes.ref.value));
       break;
 
     case "way":
       entry = new Way();
       prepBaseNode(xmlNode);
-      entry.nodes = [];
       break;
 
     case "member":
@@ -107,56 +104,47 @@ function closetag (tagName) {
   switch(tagName)
   {
     case "node":
+      entry.set("loc.type", "Point");
       save(Node, entry);
       break;
+
     case "way":
-      if (options.way.geometry != undefined && options.way.geometry == false) {
-        entry.set("loc", undefined);
-        if (options.way.nodes == undefined || options.way.nodes == false )
-          entry.set("nodes", undefined);
+      var isCircularId = entry.loc.nodes[0] === entry.loc.nodes[entry.loc.nodes.length-1];
+      var isCircularLtLng = false;
 
-        save(Way, entry);
+      if (!!options.way.populateGeometry) {
+        Node.find(
+        {osm_id:{$in: entry.loc.nodes}},
+        {"loc.coordinates":true, _id:false},
+        function (err, doc) {
 
-        break;
+          if (err) return console.log(err, entry);
+          if (!!!options.way.nodeIdList){
+            entry.set('loc.nodes', undefined);
+          }
+
+          doc.forEach(function (elm, index) {
+            entry.loc.coordinates.push(elm.loc.coordinates);
+          });
+
+          var coord = entry.loc.coordinates
+          isCircularLtLng = coord[0]  === coord[coord.length-1]
+
+          // TODO: Fix something so this does not happen!
+          // test to see if all nodes in ways are being saved.
+          console.log(doc.length, entry.loc.nodes.length)
+
+        });
       }
 
-      (function(way, nodeRefs) {
-        var query = options.useOriginalID ? { _id: { $in: nodeRefs } }: { osm_id: { $in: nodeRefs } };
-          Node.find(query, function(err, nodes) {
-            if (err) { console.log(err); return; }
-
-            var lookup = {};
-            for (var i = 0, len = nodes.length; i < len; i++) {
-              lookup[options.useOriginalID ? nodes[i]._id : nodes[i].osm_id] = i;
-            }
-
-            var nodeLocs = nodeRefs.map(function (ref) {
-              var index = lookup[ref];
-              if (index == undefined) {
-                // TODO: Fix something so this does not happen!
-                console.log("missing node " + ref + " for way " + (options.useOriginalID ? way._id : way.osm_id));
-                return [0,0];
-              }
-              return nodes[index].loc.coordinates;
-            });
-
-            // Check if this is a polygon (closed circular way)
-            var first = nodeLocs[0];
-            var last = nodeLocs.slice(-1)[0];
-
-            if (first[0] === last[0] && first[1] === last[1]) {
-              way.loc = { type: 'Polygon', coordinates: [nodeLocs] };
-            } else { // This is a LineString
-              way.loc = { type: 'LineString', coordinates: nodeLocs };
-            }
-
-            if (options.way.nodes == undefined || options.way.nodes == false)
-              way.set("nodes", undefined);
-
-            save(Way, way);
-          });
-        })(entry, entry.nodes.slice()); // Pass in a copy of nodes such that it can be changed
+      if (isCircularId || isCircularLtLng ) {
+        entry.set( 'loc.type', 'Polygon');
+      } else {
+        entry.set( 'loc.type', 'LineString');
+      }
+      save(Way, entry);
       break;
+
     case "relation":
       save(Relation, entry);
       break;
