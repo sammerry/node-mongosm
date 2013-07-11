@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-
 /* jshint -W004 */
 
 var fs = require("fs"),
     options = require('./options.js');
 
 var mongoose = require("./schema/index.js")(options),
-    saxStream = require("sax").createStream(options.strict, options);
+    saxStream = require("sax").createStream(options.strict, options),
+    async = require("async");
 
 require('./commandline.js')(options);
 require('./arrayHelper.js');
@@ -17,6 +17,97 @@ var Way = mongoose.db.model('way');
 var Relation = mongoose.db.model('relation');
 var entry;
 
+// Reading
+
+var finishedReadingNodes = false;
+var finishedReadingWays = false;
+var finishedReadingRelations = false;
+
+// Accounting
+
+var inputNodes = 0;
+var outputNodes = 0;
+var inputWays = 0;
+var outputWays = 0;
+var inputRelations = 0;
+var outputRelations = 0;
+
+var models = { node: Node, way: Way, relation: Relation };
+
+var wayQueue = async.queue(function (way, callback) {
+  var isCircularId = way.loc.nodes[0] === way.loc.nodes[way.loc.nodes.length-1];
+  var isCircularLtLng = false;
+
+  if (!!options.way.populateGeometry) {
+    Node.find(
+    {osm_id:{$in: way.loc.nodes}},
+    {"loc.coordinates":true, _id:false},
+    function (err, doc) {
+
+      // doc = doc.matchOrder(way.loc.nodes);
+
+      if (err) return console.log(err, way);
+      if (!!!options.way.nodeIdList){
+        way.set('loc.nodes', undefined);
+      }
+
+      doc.forEach(function (elm, index) {
+        way.loc.coordinates.push(elm.loc.coordinates);
+      });
+
+      var coord = way.loc.coordinates;
+      isCircularLtLng = coord[0] === coord[coord.length-1];
+
+      if (isCircularId || isCircularLtLng ) {
+        way.set( 'loc.type', 'Polygon');
+      } else {
+        way.set( 'loc.type', 'LineString');
+      }
+
+      save(Way, way);
+    });
+  } else {
+    if (!!!options.way.nodeIdList){
+      way.set('loc.nodes', undefined);
+    }
+
+    save(Way, way);
+  }
+  callback();
+}, 0);
+
+var relationQueue = async.queue(function(relation, callback) {
+  // TODO: Create different geometries depending on the relations tags, e.g. type=multipolygon should be a
+  //       MultiPolygon.
+  // TODO: The following might also break if a relation includes a relation as a member, but the
+  //       included relation has not been processed yet.
+  var counter = relation.members.length;
+  var features = [];
+
+  for (var index = 0; index < relation.members.length; index++) {
+    (function(index) {
+      var member = relation.members[index];
+      var query = options.useOriginalID ? { _id: parseInt(member.ref) } : { osm_id: parseInt(member.ref)};
+      models[member.type].findOne(query, function(err, object) {
+        if (err) { console.log(err); return; }
+
+        if (object == null) {
+          console.log("Unable to find way " + member.ref);
+          return;
+        }
+
+        features[index] = { type: "Feature", geometry: object.loc, role: member.role };
+        // TODO: Slightly non standard here as the above feature contains a role?
+        counter--;
+        if (counter == 0) {
+          entry.set("loc", { type: "FeatureCollection", features: features });
+          save(Relation, relation);
+        }
+      });
+    })(index);
+  }
+}, 0);
+
 mongoose.connection.on('open', function () {
 
   // TODO: add dots to show activity every 2 sec?
@@ -25,7 +116,9 @@ mongoose.connection.on('open', function () {
   fs.createReadStream(options.filename)
     .pipe(saxStream);
 
-  saxStream.on("end", shutDown);
+  saxStream.on("end", function() {
+    finishedReadingRelations = true;
+  });
 
   saxStream.on("error", function (e) {
     console.error("error!", e);
@@ -39,6 +132,7 @@ function parse (xmlNode)  {
   switch(xmlNode.name)
   {
     case "node":
+      inputNodes++;
       entry = new Node();
       var lat = parseFloat( xmlNode.attributes.lat.value );
       var lng = parseFloat( xmlNode.attributes.lon.value );
@@ -57,27 +151,26 @@ function parse (xmlNode)  {
       break;
 
     case "way":
+      inputWays++;
+      finishedReadingNodes = true;
       entry = new Way();
       prepBaseNode(xmlNode);
       break;
 
     case "member":
-      var val = {};
+      var member = {};
       for (var attribute in xmlNode.attributes) {
         // TODO: this does not account for namespacing
-        val[attribute] = xmlNode.attributes[attribute].value;
+        member[attribute] = xmlNode.attributes[attribute].value;
       }
-      var coord = entry.get("loc.coordinates", Array) || [];
-
-      // TODO: this should be an object not a string
-      coord.push(JSON.stringify(val));
-      entry.set("loc.coordinates", coord);
+      entry.members.push(member);
       break;
 
     case "relation":
+      inputRelations++;
+      finishedReadingWays = true;
       entry = new Relation();
-      entry.set("_id", xmlNode.attributes.id.value);
-      entry.set("loc", {type:"MultiPolygon", coordinates: []});
+      entry.members = [];
       prepBaseNode(xmlNode);
       break;
 
@@ -111,53 +204,12 @@ function closetag (tagName) {
       break;
 
     case "way":
-      var isCircularId = entry.loc.nodes[0] === entry.loc.nodes[entry.loc.nodes.length-1];
-      var isCircularLtLng = false;
-
-      // Create a local reference to entry, such that it can be used in the callback
-      var way = entry;
-
-      if (!!options.way.populateGeometry) {
-        Node.find(
-        {osm_id:{$in: way.loc.nodes}},
-        {"loc.coordinates":true, _id:false},
-        function (err, doc) {
-
-          // doc = doc.matchOrder(way.loc.nodes);
-
-          if (err) return console.log(err, way);
-          if (!!!options.way.nodeIdList){
-            way.set('loc.nodes', undefined);
-          }
-
-          doc.forEach(function (elm, index) {
-            way.loc.coordinates.push(elm.loc.coordinates);
-          });
-
-          var coord = way.loc.coordinates;
-          isCircularLtLng = coord[0] === coord[coord.length-1];
-
-          if (isCircularId || isCircularLtLng ) {
-            way.set( 'loc.type', 'Polygon');
-          } else {
-            way.set( 'loc.type', 'LineString');
-          }
-
-          save(Way, way);
-        });
-      } else {
-        if (!!!options.way.nodeIdList){
-          way.set('loc.nodes', undefined);
-        }
-
-        save(Way, way);
-      }
-
+      wayQueue.push(entry);
+      finishedWays = true;
       break;
 
     case "relation":
-      var relation = entry;
-      save(Relation, relation);
+      relationQueue.push(entry);
       break;
   }
 }
@@ -169,14 +221,6 @@ function prepBaseNode (xmlNode) {
     if (attribute === "id" || attribute === "lat" || attribute === "lon") continue;
     entry.set(attribute, xmlNode.attributes[attribute].value);
   }
-}
-
-function shutDown() {
-  process.stdout.write("\n\nEOF: Ctrl-C to Exit\n\n");
-
-  // on small files this closes early
-  // implementing manual exit
-  // mongoose.connection.close();
 }
 
 // Saves a object (node, way or relation), the coresponding model (Node, Way, or Relation)
@@ -194,7 +238,38 @@ function save(model, object) {
     object.save(function(err) {
       if (err)
         console.log(err);
+      switch(object.type) {
+        case "node":
+          outputNodes++;
+          // if we have begun processing ways, and we have just saved the last node
+          if (finishedReadingNodes && outputNodes == inputNodes) {
+            finishedNodes = true;
+            console.log("Starting to process the ways");
+            // start processing the ways
+            wayQueue.concurrency = 1;
+            wayQueue.process();
+          }
+          break;
+        case "way":
+          outputWays++;
+          if (finishedReadingWays && outputWays == inputWays) {
+            console.log("Finished processing " + outputWays + " ways");
+            console.log("Starting to process the relations");
+            // start processing the relations
+            relationQueue.concurrency = 1;
+            relationQueue.process();
+          }
+          break;
+        case "relation":
+          outputRelations++;
+          if (finishedReadingRelations && outputRelations == inputRelations) {
+            console.log("Finished processing " + outputRelations + " relations");
+            console.log("Finished");
+            mongoose.connection.close();
+          }
+          break;
+      }
+
     });
   }
 }
-
