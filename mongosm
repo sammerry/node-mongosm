@@ -33,8 +33,6 @@ mongoose.connection.on('open', function () {
   });
 });
 
-var wayNodeRefs = [];
-
 function parse (xmlNode)  {
 
   switch(xmlNode.name)
@@ -55,14 +53,14 @@ function parse (xmlNode)  {
       break;
 
     case "nd":
-      wayNodeRefs.push(parseInt(xmlNode.attributes.ref.value));
+      entry.nodes.push(parseInt(xmlNode.attributes.ref.value));
       // These refs are translated to points in the closetag function
       break;
 
     case "way":
       entry = new Way();
       prepBaseNode(xmlNode);
-      wayNodeRefs = [];
+      entry.nodes = [];
       break;
 
     case "member":
@@ -112,42 +110,55 @@ function closetag (tagName) {
       save(Node, entry);
       break;
     case "way":
-      (function(way, nodes) {
-        var counter = nodes.length;
-        for (var index in nodes) {
-          (function(index) {
-            var query = options.useOriginalID ? { _id: nodes[index] } : { osm_id: nodes[index] };
-            Node.findOne(query, function(err, node) {
-              if (err) { console.log(err); return; }
+      if (options.way.geometry != undefined && options.way.geometry == false) {
+        entry.set("loc", undefined);
+        if (options.way.nodes == undefined || options.way.nodes == false )
+          entry.set("nodes", undefined);
 
-              if (node == null) {
-                console.log("node " + nodes[index] + " not found, skiping way " + way._id);
-                return;
+        save(Way, entry);
+
+        break;
+      }
+
+      (function(way, nodeRefs) {
+        var query = options.useOriginalID ? { _id: { $in: nodeRefs } }: { osm_id: { $in: nodeRefs } };
+          Node.find(query, function(err, nodes) {
+            if (err) { console.log(err); return; }
+
+            var lookup = {};
+            for (var i = 0, len = nodes.length; i < len; i++) {
+              lookup[options.useOriginalID ? nodes[i]._id : nodes[i].osm_id] = i;
+            }
+
+            var nodeLocs = nodeRefs.map(function (ref) {
+              var index = lookup[ref];
+              if (index == undefined) {
+                // TODO: Fix something so this does not happen!
+                console.log("missing node " + ref + " for way " + (options.useOriginalID ? way._id : way.osm_id));
+                return [0,0];
               }
-
-              nodes[index] = node.loc.coordinates;
-
-              counter--;
-              if (counter == 0) {
-                // Check if this is a polygon (closed circular way)
-                var first = nodes[0];
-                var last = nodes.slice(-1)[0];
-
-                if (first[0] === last[0] && first[1] === last[1]) {
-                  way.loc = { type: 'Polygon', coordinates: [nodes] };
-                } else { // This is a LineString
-                  way.loc = { type: 'LineString', coordinates: nodes };
-                }
-
-                save(Way, way);
-              }
+              return nodes[index].loc.coordinates;
             });
-          })(index);
-        }
-        })(entry, wayNodeRefs);
+
+            // Check if this is a polygon (closed circular way)
+            var first = nodeLocs[0];
+            var last = nodeLocs.slice(-1)[0];
+
+            if (first[0] === last[0] && first[1] === last[1]) {
+              way.loc = { type: 'Polygon', coordinates: [nodeLocs] };
+            } else { // This is a LineString
+              way.loc = { type: 'LineString', coordinates: nodeLocs };
+            }
+
+            if (options.way.nodes == undefined || options.way.nodes == false)
+              way.set("nodes", undefined);
+
+            save(Way, way);
+          });
+        })(entry, entry.nodes.slice()); // Pass in a copy of nodes such that it can be changed
       break;
     case "relation":
-      save(Relation, relation);
+      save(Relation, entry);
       break;
   }
 }

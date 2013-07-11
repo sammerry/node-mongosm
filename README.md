@@ -67,8 +67,13 @@ Document Filter Options:
   ignoreAttributes: []  // items to excluded
   keepAttributes: [] // strict list of items to include
 ```
-
 only one document filter type should be needed
+
+Way Specific Options:
+```
+  geometry: true // include the generated LineString or Polygon
+  nodes: false // include the array of node references that make up the way
+```
 
 ##Wishlist
 
