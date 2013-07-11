@@ -83,6 +83,7 @@ module.exports = function (options) {
       type: { type: String },
       coordinates: { type: [] },
     },
+    nodes: [],
     version: Number,
     uid: Number,
     user: String,
