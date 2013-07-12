@@ -112,37 +112,43 @@ function closetag (tagName) {
       var isCircularId = entry.loc.nodes[0] === entry.loc.nodes[entry.loc.nodes.length-1];
       var isCircularLtLng = false;
 
+      // Create a local reference to entry, such that it can be used in the callback
+      var way = entry;
+
       if (!!options.way.populateGeometry) {
         Node.find(
-        {osm_id:{$in: entry.loc.nodes}},
+        {osm_id:{$in: way.loc.nodes}},
         {"loc.coordinates":true, _id:false},
         function (err, doc) {
 
-          if (err) return console.log(err, entry);
+          if (err) return console.log(err, way);
           if (!!!options.way.nodeIdList){
-            entry.set('loc.nodes', undefined);
+            way.set('loc.nodes', undefined);
           }
 
           doc.forEach(function (elm, index) {
-            entry.loc.coordinates.push(elm.loc.coordinates);
+            way.loc.coordinates.push(elm.loc.coordinates);
           });
 
-          var coord = entry.loc.coordinates
-          isCircularLtLng = coord[0]  === coord[coord.length-1]
+          var coord = way.loc.coordinates
+          isCircularLtLng = coord[0] === coord[coord.length-1]
 
-          // TODO: Fix something so this does not happen!
-          // test to see if all nodes in ways are being saved.
-          console.log(doc.length, entry.loc.nodes.length)
+          if (isCircularId || isCircularLtLng ) {
+            way.set( 'loc.type', 'Polygon');
+          } else {
+            way.set( 'loc.type', 'LineString');
+          }
 
+          save(Way, way);
         });
+      } else {
+        if (!!!options.way.nodeIdList){
+          way.set('loc.nodes', undefined);
+        }
+
+        save(Way, way);
       }
 
-      if (isCircularId || isCircularLtLng ) {
-        entry.set( 'loc.type', 'Polygon');
-      } else {
-        entry.set( 'loc.type', 'LineString');
-      }
-      save(Way, entry);
       break;
 
     case "relation":
