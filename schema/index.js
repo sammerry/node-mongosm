@@ -41,6 +41,11 @@ module.exports = function (options) {
     if (options[this.type] && options[this.type].keepAttributes) keepAttribute(this);
     if (options[this.type] && options[this.type].ignoreAttributes) ignoreAttribute(this);
 
+    if (options.useOriginalID == true) {
+      this.set("_id",  this.osm_id);
+      this.set("osm_id",  undefined);
+    }
+
     next();
   }
 
@@ -53,6 +58,7 @@ module.exports = function (options) {
 
 
   var Node_Schema = Schema({
+    _id: Number,
     osm_id: { type:Number, unique: true },
     updated: {type:Date, default: Date.now},
     type: {type:String, default:"node"},
@@ -74,6 +80,7 @@ module.exports = function (options) {
   Node_Schema.post('save', mongoose.postSave);
 
   var Way_Schema = Schema({
+    _id: Number,
     osm_id: { type:Number, unique: true },
     updated: {type:Date, default: Date.now},
     type: {type:String, default:"way"},
@@ -95,6 +102,7 @@ module.exports = function (options) {
   Way_Schema.post('save', mongoose.postSave);
 
   var Relation_Schema = Schema({
+    _id: Number,
     osm_id: { type:Number, unique: true },
     updated: {type:Date, default: Date.now},
     type: {type:String, default:"relation"},

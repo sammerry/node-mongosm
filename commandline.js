@@ -20,6 +20,9 @@ module.exports = function () {
         case "-s":
           options.suppressErrors = true;
           break;
+        case "-u":
+          options.useOriginalID = true;
+          break;
         case "-k":
           var atrKeep = array.splice(index+1,1)[0].split(":");
           options[atrKeep[0]] = options[atrKeep[0]] || {};

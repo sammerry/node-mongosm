@@ -104,8 +104,9 @@ function closetag (tagName) {
   switch(tagName)
   {
     case "node":
-      entry.set("loc.type", "Point");
-      save(Node, entry);
+      var node = entry;
+      node.set("loc.type", "Point");
+      save(Node, node);
       break;
 
     case "way":
@@ -152,18 +153,14 @@ function closetag (tagName) {
       break;
 
     case "relation":
-      save(Relation, entry);
+      var relation = entry;
+      save(Relation, relation);
       break;
   }
 }
 
 function prepBaseNode (xmlNode) {
-  if (options.useOriginalID == true) {
-    entry.set("_id",  xmlNode.attributes.id.value);
-  } else {
-    entry.set("osm_id",  xmlNode.attributes.id.value);
-  }
-
+  entry.set("osm_id",  xmlNode.attributes.id.value);
   entry.set("type",  xmlNode.name);
   for (var attribute in xmlNode.attributes) {
     if (attribute === "id" || attribute === "lat" || attribute === "lon") continue;
