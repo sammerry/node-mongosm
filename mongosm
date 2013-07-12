@@ -10,6 +10,7 @@ var mongoose = require("schema/index.js")(options),
     saxStream = require("sax").createStream(options.strict, options);
 
 require('commandline.js')(options);
+require('arrayHelper.js');
 
 var Node = mongoose.db.model('node');
 var Way = mongoose.db.model('way');
@@ -121,6 +122,8 @@ function closetag (tagName) {
         {osm_id:{$in: way.loc.nodes}},
         {"loc.coordinates":true, _id:false},
         function (err, doc) {
+
+          // doc = doc.matchOrder(way.loc.nodes);
 
           if (err) return console.log(err, way);
           if (!!!options.way.nodeIdList){
