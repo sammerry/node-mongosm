@@ -37,7 +37,7 @@ module.exports = function (options) {
     setTimeout(reconnect, 5000)
   });
 
-  mongoose.preSaveFileter= function (next) {
+  mongoose.preSaveFilter = function (next, done) {
     if (options[this.type] && options[this.type].keepAttributes) keepAttribute(this);
     if (options[this.type] && options[this.type].ignoreAttributes) ignoreAttribute(this);
 
@@ -47,6 +47,7 @@ module.exports = function (options) {
     }
 
     next();
+    done();
   }
 
   mongoose.postSave = function (doc) {
@@ -76,7 +77,7 @@ module.exports = function (options) {
     tags: {}
   },{collection: "nodes" });
   db.model('node', Node_Schema);
-  Node_Schema.pre('save', mongoose.preSaveFileter);
+  Node_Schema.pre('save', true, mongoose.preSaveFilter);
   Node_Schema.post('save', mongoose.postSave);
 
   var Way_Schema = Schema({
@@ -98,7 +99,7 @@ module.exports = function (options) {
     tags: {}
   },{collection: "ways" });
   db.model('way', Way_Schema);
-  Way_Schema.pre('save',  mongoose.preSaveFileter);
+  Way_Schema.pre('save', true,  mongoose.preSaveFilter);
   Way_Schema.post('save', mongoose.postSave);
 
   var Relation_Schema = Schema({
@@ -116,7 +117,7 @@ module.exports = function (options) {
     tags: {}
   },{collection: "relations" });
   db.model('relation', Relation_Schema);
-  Relation_Schema.pre('save', mongoose.preSaveFileter);
+  Relation_Schema.pre('save', true, mongoose.preSaveFilter);
   Relation_Schema.post('save', mongoose.postSave);
 
   return mongoose;
