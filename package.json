@@ -4,7 +4,8 @@
     "private": true,
     "dependencies": {
         "mongoose": "3.6.14",
-        "sax": "0.5.4"
+        "sax": "0.5.4",
+        "date-utils": "1.2.13"
     },
     "description": "parses and uploads .osm file elemetns to mongodb instance",
     "main": "mongosm",
