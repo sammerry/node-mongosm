@@ -7,7 +7,7 @@ Array.prototype.matchOrder = function (idArray) {
   for (i;i--;) {// array to match to
     for (b;b--;) {// array being matched
       if (this[b].osm_id == idArray[i]) {
-        newOrder.unshift(this[b]);
+        newOrder.unshift(this[b].loc.coordinates);
         continue;
       }
     }
