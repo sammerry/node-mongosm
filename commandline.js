@@ -25,6 +25,9 @@ module.exports = function () {
         case "-u":
           options.useOriginalID = true;
           break;
+        case "-tb":
+          options.timeBucket = true;
+          break;
         case "-k":
           var atrKeep = array.splice(index+1,1)[0].split(":");
           options[atrKeep[0]] = options[atrKeep[0]] || {};

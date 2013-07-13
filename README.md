@@ -37,6 +37,7 @@ alternatively you can run it from the commandline with
   -s suppress errors
   -host host name
   -port port
+  -tb use time bucketing.
   -sc place all nodes, ways and relations in the same collection.
   -k document filter: removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
   -i document filter: includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp
@@ -62,6 +63,7 @@ Standard Options:
   strict: false
   lowercase: true
   singleCollection: false
+  timeBucket: false
 ```
 
 Document Filter Options:
@@ -77,9 +79,17 @@ Way Specific Options:
   nodes: false // include the array of node references that make up the way
 ```
 
+##Time Stamp Bucketing
+
+When run with the timeBucket option to true or the -tb flag. You can efficiently search
+and index via day month or year. Searches for all entries in january of
+2009 would look like.
+```
+db.geo.find({'osmTimeBucket.2009.01':{$exists:true}});
+```
+
 ##Wishlist
 
-- Time Stamp Bucketing
 - Better handling for relation refs
 - Retry once on insert failure
 - Testing vs sample .osm files

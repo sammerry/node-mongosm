@@ -11,6 +11,7 @@ module.exports = {
   strict: false,
   lowercase:true,
   singleCollection: true,
+  timeBucket: false,
   node: {
     ignoreAttributes: []
   },

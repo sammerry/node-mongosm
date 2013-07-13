@@ -1,5 +1,6 @@
  
 var mongoose = require('./../node_modules/mongoose');
+require('./../node_modules/date-utils');
 
 
 
@@ -56,6 +57,15 @@ module.exports = function (options) {
       this.set("osm_id",  undefined);
     }
 
+    if (!!options.timeBucket) {
+      var date = new Date(this.timestamp);
+      var currentDate = new Date();
+      var osmD = date.toFormat('YYYY.MM.DD.HH.SS');
+      var monD = date.toFormat('YYYY.MM.DD.HH.SS');
+      this.set('osmTimeBucket.' + osmD, true);
+      this.set('updateTimeBucket.' + monD, true);
+    }
+
     next();
     done();
   };
@@ -78,6 +88,8 @@ module.exports = function (options) {
       coordinates: [Number],
       index: "2dsphere"
     },
+    osmTimeBucket: Object,
+    updateTimeBucket: Object,
     version: Number,
     uid: Number,
     user: String,
@@ -100,6 +112,8 @@ module.exports = function (options) {
       nodes: { type: Array, default:[]},
       coordinates: []
     },
+    osmTimeBucket: Object,
+    updateTimeBucket: Object,
     version: Number,
     uid: Number,
     user: String,
@@ -124,6 +138,8 @@ module.exports = function (options) {
     changeset: Number,
     timestamp: Date,
     visible: Boolean,
+    osmTimeBucket: Object,
+    updateTimeBucket: Object,
     tags: {}
   },{collection: relationCollection });
   db.model('relation', Relation_Schema);
