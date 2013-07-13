@@ -1,5 +1,5 @@
 
-options = require("options.js");
+options = require("./options.js");
 module.exports = function () {
   process.argv.forEach(function (val, index, array) {
     function logHelp () {

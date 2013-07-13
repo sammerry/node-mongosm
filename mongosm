@@ -4,13 +4,13 @@
 /* jshint -W004 */
 
 var fs = require("fs"),
-    options = require('options.js');
+    options = require('./options.js');
 
-var mongoose = require("schema/index.js")(options),
+var mongoose = require("./schema/index.js")(options),
     saxStream = require("sax").createStream(options.strict, options);
 
-require('commandline.js')(options);
-require('arrayHelper.js');
+require('./commandline.js')(options);
+require('./arrayHelper.js');
 
 var Node = mongoose.db.model('node');
 var Way = mongoose.db.model('way');
