@@ -37,6 +37,7 @@ alternatively you can run it from the commandline with
   -s suppress errors
   -host host name
   -port port
+  -sc place all nodes, ways and relations in the same collection.
   -k document filter: removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
   -i document filter: includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp
   -db database
@@ -59,7 +60,8 @@ Standard Options:
   upsert: false
   xmlns: true
   strict: false
-  lowercase:true
+  lowercase: true
+  singleCollection: false
 ```
 
 Document Filter Options:

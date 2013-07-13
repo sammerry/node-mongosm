@@ -6,56 +6,66 @@ var mongoose = require('./../node_modules/mongoose');
 module.exports = function (options) {
   var Schema = mongoose.Schema;
 
+  var nodeCollection =
+      wayCollection =
+      relationCollection = 'geo';
+
   db = mongoose.db = mongoose.connect(
     options.host,
     options.database,
     options.port
   );
 
+  if (!!options.singleCollection) {
+    nodeCollection = 'nodes';
+    wayCollection = 'ways';
+    relationCollection = 'relations';
+  }
+
   function keepAttribute (preSaveEntry) {
     if (!!!options[preSaveEntry.type].keepAttributes[0]) return;
-    var preSaveJson = JSON.parse(JSON.stringify(preSaveEntry))
+    var preSaveJson = JSON.parse(JSON.stringify(preSaveEntry));
     for (var atr in preSaveJson) {
       if (!!options[preSaveEntry.type] && options[preSaveEntry.type].keepAttributes.indexOf(atr) < 0){
         preSaveEntry.set(atr, undefined);
       }
     }
-  };
+  }
 
   function ignoreAttribute (preSaveEntry) {
     if (!!!options[preSaveEntry.type].ignoreAttributes[0]) return;
     options[preSaveEntry.type].ignoreAttributes.forEach(function (atr, index) {
       preSaveEntry.set(atr, undefined);
     });
-  };
+  }
 
   mongoose.connection.on('error', function (err) {
     console.log(err);
     function reconnect () {
       mongoose.connect(serverAddress);
-    };
-    setTimeout(reconnect, 5000)
+    }
+    setTimeout(reconnect, 5000);
   });
 
   mongoose.preSaveFilter = function (next, done) {
     if (options[this.type] && options[this.type].keepAttributes) keepAttribute(this);
     if (options[this.type] && options[this.type].ignoreAttributes) ignoreAttribute(this);
 
-    if (options.useOriginalID == true) {
+    if (options.useOriginalID === true) {
       this.set("_id",  this.osm_id);
       this.set("osm_id",  undefined);
     }
 
     next();
     done();
-  }
+  };
 
   mongoose.postSave = function (doc) {
     if (!!options.verbose) {
       console.log(doc);
       process.stdout.write("\n\n################################################\n");
     }
-  }
+  };
 
 
   var Node_Schema = Schema({
@@ -75,7 +85,7 @@ module.exports = function (options) {
     timestamp: Date,
     visible: Boolean,
     tags: {}
-  },{collection: "nodes" });
+  },{collection: nodeCollection });
   db.model('node', Node_Schema);
   Node_Schema.pre('save', true, mongoose.preSaveFilter);
   Node_Schema.post('save', mongoose.postSave);
@@ -97,7 +107,7 @@ module.exports = function (options) {
     timestamp: Date,
     visible: Boolean,
     tags: {}
-  },{collection: "ways" });
+  },{collection: wayCollection });
   db.model('way', Way_Schema);
   Way_Schema.pre('save', true,  mongoose.preSaveFilter);
   Way_Schema.post('save', mongoose.postSave);
@@ -115,11 +125,11 @@ module.exports = function (options) {
     timestamp: Date,
     visible: Boolean,
     tags: {}
-  },{collection: "relations" });
+  },{collection: relationCollection });
   db.model('relation', Relation_Schema);
   Relation_Schema.pre('save', true, mongoose.preSaveFilter);
   Relation_Schema.post('save', mongoose.postSave);
 
   return mongoose;
-}
+};
 

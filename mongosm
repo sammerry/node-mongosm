@@ -53,7 +53,7 @@ function parse (xmlNode)  {
       break;
 
     case "nd":
-      entry.loc.nodes.push(parseInt(xmlNode.attributes.ref.value));
+      entry.loc.nodes.push(parseInt(xmlNode.attributes.ref.value, 10));
       break;
 
     case "way":
@@ -134,8 +134,8 @@ function closetag (tagName) {
             way.loc.coordinates.push(elm.loc.coordinates);
           });
 
-          var coord = way.loc.coordinates
-          isCircularLtLng = coord[0] === coord[coord.length-1]
+          var coord = way.loc.coordinates;
+          isCircularLtLng = coord[0] === coord[coord.length-1];
 
           if (isCircularId || isCircularLtLng ) {
             way.set( 'loc.type', 'Polygon');
@@ -182,7 +182,7 @@ function shutDown() {
 // Saves a object (node, way or relation), the coresponding model (Node, Way, or Relation)
 // should also be given as this is used to update (if required).
 function save(model, object) {
-  if (options.upsert == true) {
+  if (options.upsert === true) {
     var value = object.toObject();
     var query = options.useOriginalID ? { _id: value._id } : { osm_id: value.osm_id };
     delete value._id;

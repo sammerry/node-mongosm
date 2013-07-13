@@ -10,6 +10,7 @@ module.exports = {
   xmlns: true,
   strict: false,
   lowercase:true,
+  singleCollection: true,
   node: {
     ignoreAttributes: []
   },

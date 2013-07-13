@@ -20,6 +20,8 @@ module.exports = function () {
         case "-s":
           options.suppressErrors = true;
           break;
+        case "-sc":
+          options.singleCollection = true;
         case "-u":
           options.useOriginalID = true;
           break;
