@@ -6,8 +6,7 @@
         "mongoose": "3.6.14",
         "sax": "0.5.4",
         "date-utils": "1.2.13",
-        "async": "0.2.9",
-        "moment": "2.1.0"
+        "async": "0.2.9"
     },
     "description": "parses and uploads .osm file elemetns to mongodb instance",
     "main": "mongosm",

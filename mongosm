@@ -7,10 +7,11 @@ var fs = require("fs"),
 
 var mongoose = require("./schema/index.js")(options),
     saxStream = require("sax").createStream(options.strict, options),
-    async = require("async"),
-    moment = require("moment");
+    async = require("async");
 
-var startTime = moment()
+require('date-utils');
+
+var startTime = new Date()
 
 require('./commandline.js')(options);
 require('./arrayHelper.js');
@@ -277,6 +278,24 @@ function prepBaseNode (xmlNode) {
   }
 }
 
+function end() {
+  console.log("Finished processing " + (outputIndependantRelations + outputDependantRelations) + " relations");
+  var endTime = new Date();
+
+  var hours = startTime.getHoursBetween(endTime);
+  var minutes = startTime.getMinutesBetween(endTime) - (hours * 60);
+  var seconds = startTime.getSecondsBetween(endTime) - (minutes * 60);
+
+  process.stdout.write("Finished in " + seconds + " seconds ");
+  if (minutes == 1) process.stdout.write(minutes + " minute ");
+    else if (minutes > 1) process.stdout.write(minutes + " minutes ");
+  if (hours == 1) process.stdout.write(hours + " hour");
+    else if (hours > 1) process.stdout.write(hours + "hours ");
+  process.stdout.write("\n");
+
+  mongoose.connection.close();
+}
+
 // Saves a object (node, way or relation), the coresponding model (Node, Way, or Relation)
 // should also be given as this is used to update (if required).
 function save(model, object) {
@@ -324,9 +343,7 @@ function save(model, object) {
 
               // If the processing of the dependant relations has finished
               if (outputDependantRelations === inputDependantRelations) {
-                console.log("Finished processing " + (outputIndependantRelations + outputDependantRelations) + " relations");
-                console.log("Finished in " + startTime.fromNow(true));
-                mongoose.connection.close();
+                end();
               } else {
                 // Process the next dependant relation
                 processRelation(dependantRelationQueue[outputDependantRelations]);
@@ -336,10 +353,14 @@ function save(model, object) {
 
               // If this is the last independant relation to be processed
               if (inputIndependantRelations === outputIndependantRelations) {
-                // First sort the dependant relations
-                sortDependantRelations();
-                // Then start the processing
-                processRelation(dependantRelationQueue[0]);
+                if (dependantRelationQueue.length > 0) {
+                  // First sort the dependant relations
+                  sortDependantRelations();
+                  // Then start the processing
+                  processRelation(dependantRelationQueue[0]);
+                }
+              } else {
+                end();
               }
             }
           } else {
