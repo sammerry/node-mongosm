@@ -83,7 +83,7 @@ Way Specific Options:
 
 By setting the options ignoreAttributes, keepAttributes per node, way or
 relation you can filter the document pre save. The options should be
-provided an array of the key names which are to be effected. This can also be acheived
+provided an array of the key names which are to be effected. This can also be achieved
 by using the -k or -i command line flag in the following format <elementName>:<key>,<key>.
 
 Via Command Line:
