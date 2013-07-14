@@ -37,6 +37,8 @@ alternatively you can run it from the commandline with
   -s suppress errors
   -host host name
   -port port
+  -u set db username
+  -p set db password
   -tb use time bucketing.
   -sc place all nodes, ways and relations in the same collection.
   -k document filter: removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
@@ -78,6 +80,10 @@ Way Specific Options:
   geometry: true // include the generated LineString or Polygon
   nodes: false // include the array of node references that make up the way
 ```
+
+Databse Options:
+
+All [Mongoose options](http://mongoosejs.com/docs/connections.html) are supported from options.mongoose in  [options.js](https://github.com/sammerry/node-mongosm/blob/master/options.js).
 
 ##Document Filtering
 
