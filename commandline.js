@@ -22,8 +22,17 @@ module.exports = function () {
           break;
         case "-sc":
           options.singleCollection = true;
-        case "-u":
+        case "-oid":
           options.useOriginalID = true;
+          break;
+        case "-uri":
+          options.mongoose.uri = array.splice(index+1,1)[0];
+          break;
+        case "-u":
+          options.mongoose.username = array.splice(index+1,1)[0];
+          break;
+        case "-p":
+          options.mongoose.password = array.splice(index+1,1)[0];
           break;
         case "-tb":
           options.timeBucket = true;

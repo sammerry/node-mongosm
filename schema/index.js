@@ -11,10 +11,12 @@ module.exports = function (options) {
       wayCollection =
       relationCollection = 'geo';
 
+  options.mongoose.uri = options.mongoose.uri
+                      || "mongodb://" + options.host + ":" + options.port + "/" + database;
+
   db = mongoose.db = mongoose.connect(
-    options.host,
-    options.database,
-    options.port
+    options.mongoose.uri,
+    options.mongoose
   );
 
   if (!!options.singleCollection) {
@@ -43,7 +45,10 @@ module.exports = function (options) {
   mongoose.connection.on('error', function (err) {
     console.log(err);
     function reconnect () {
-      mongoose.connect(serverAddress);
+      mongoose.connect(
+        options.uri,
+        options.mongoose
+      );
     }
     setTimeout(reconnect, 5000);
   });

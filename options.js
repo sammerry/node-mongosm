@@ -1,4 +1,7 @@
 module.exports = {
+  mongoose: {
+    uri: ""
+  },
   verbose: false,
   filename: "example-osm/way.osm",
   host: "localhost",
