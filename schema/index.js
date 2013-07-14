@@ -1,8 +1,5 @@
- 
-var mongoose = require('./../node_modules/mongoose');
-require('./../node_modules/date-utils');
-
-
+var mongoose = require('mongoose');
+require('date-utils');
 
 module.exports = function (options) {
   var Schema = mongoose.Schema;
@@ -12,7 +9,7 @@ module.exports = function (options) {
       relationCollection = 'geo';
 
   options.mongoose.uri = options.mongoose.uri
-                      || "mongodb://" + options.host + ":" + options.port + "/" + database;
+                      || "mongodb://" + options.host + ":" + options.port + "/" + options.database;
 
   db = mongoose.db = mongoose.connect(
     options.mongoose.uri,
