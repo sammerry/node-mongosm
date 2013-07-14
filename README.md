@@ -116,8 +116,6 @@ db.geo.find({'osmTimeBucket.2009.01':{$exists:true}});
 
 ##Wishlist
 
-- Secure handling of User and Pass for remote db upload.
-- Better handling for relation refs
 - Retry once on insert failure
 - Testing vs sample .osm files
 - Support for multiple files
