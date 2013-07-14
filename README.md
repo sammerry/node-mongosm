@@ -79,11 +79,31 @@ Way Specific Options:
   nodes: false // include the array of node references that make up the way
 ```
 
+##Document Filtering
+
+By setting the options ignoreAttributes, keepAttributes per node, way or
+relation you can filter the document pre save. The options should be
+provided an array of the key names which are to be effected. This can also be acheived
+by using the -k or -i command line flag in the following format <elementName>:<key>,<key>.
+
+Via Command Line:
+```
+./mongosm -v -k way:loc,user
+```
+
+Via Options:
+```
+way {
+  keepAttributes: ['loc','user']
+}
+```
+
 ##Time Stamp Bucketing
 
 When run with the timeBucket option to true or the -tb flag. You can efficiently search
-and index via day month or year. Searches for all entries in january of
-2009 would look like.
+and index via day month or year much more efficiently with an $exists operator.
+
+Searches for all entries in january of 2009 would look like.
 ```
 db.geo.find({'osmTimeBucket.2009.01':{$exists:true}});
 ```
