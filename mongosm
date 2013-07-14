@@ -7,7 +7,10 @@ var fs = require("fs"),
 
 var mongoose = require("./schema/index.js")(options),
     saxStream = require("sax").createStream(options.strict, options),
-    async = require("async");
+    async = require("async"),
+    moment = require("moment");
+
+var startTime = moment()
 
 require('./commandline.js')(options);
 require('./arrayHelper.js');
@@ -16,6 +19,7 @@ var Node = mongoose.db.model('node');
 var Way = mongoose.db.model('way');
 var Relation = mongoose.db.model('relation');
 var entry;
+var relationIsDependant = false;
 
 // Reading
 
@@ -29,8 +33,10 @@ var inputNodes = 0;
 var outputNodes = 0;
 var inputWays = 0;
 var outputWays = 0;
-var inputRelations = 0;
-var outputRelations = 0;
+var inputDependantRelations = 0;
+var outputDependantRelations = 0;
+var inputIndependantRelations = 0;
+var outputIndependantRelations = 0;
 
 var models = { node: Node, way: Way, relation: Relation };
 
@@ -76,7 +82,7 @@ var wayQueue = async.queue(function (way, callback) {
   callback();
 }, 0);
 
-var relationQueue = async.queue(function(relation, callback) {
+function processRelation(relation) {
   // TODO: Create different geometries depending on the relations tags, e.g. type=multipolygon should be a
   //       MultiPolygon.
   // TODO: The following might also break if a relation includes a relation as a member, but the
@@ -92,8 +98,8 @@ var relationQueue = async.queue(function(relation, callback) {
         if (err) { console.log(err); return; }
 
         if (object == null) {
-          console.log("Unable to find way " + member.ref);
-          return;
+          console.log("Warning, generating incomplete geometry for relation " + relation.osm_id + " due to missing member " + member.ref + " (" + member.type + ")");
+          object = { loc: undefined }; // Such that the following code will not break
         }
 
         features[index] = { type: "Feature", geometry: object.loc, role: member.role };
@@ -106,10 +112,47 @@ var relationQueue = async.queue(function(relation, callback) {
       });
     })(index);
   }
+}
+
+var independantRelationQueue = async.queue(function(relation, callback) {
+  processRelation(relation);
+  callback();
 }, 0);
+
+var dependantRelationQueue = []
+
+function sortDependantRelations() {
+  for (var i=0; i<dependantRelationQueue.length; i++) {
+    var relation = dependantRelationQueue[i];
+
+    // Create a list of all the members which are relations
+    var relationMembers = []
+    for (var m=0; m<relation.members.length; m++) {
+      var member = relation.members[m];
+      if (member.type === "relation")
+        relationMembers.push(parseInt(member.ref));
+    }
+
+    // For every relation that is scheduled to be processed after this one
+    for (var j=i+1; j<dependantRelationQueue.length; j++) {
+      var otherRelation = dependantRelationQueue[j];
+
+      // Check if it is depended on by 'relation'
+      if (relationMembers.indexOf(otherRelation.osm_id) != -1) {
+        // If so, swap them
+        dependantRelationQueue[i] = otherRelation;
+        dependantRelationQueue[j] = relation;
+        // Then process 'otherRelation' (now at position i)
+        i--; // Repeat for i
+        break;
+      }
+    }
+  }
+}
 
 mongoose.connection.on('open', function () {
 
+  console.log("Starting to process the nodes");
   // TODO: add dots to show activity every 2 sec?
   saxStream.on("opentag", parse);
   saxStream.onclosetag = closetag;
@@ -118,6 +161,7 @@ mongoose.connection.on('open', function () {
 
   saxStream.on("end", function() {
     finishedReadingRelations = true;
+    console.log("Finished reading relations");
   });
 
   saxStream.on("error", function (e) {
@@ -161,13 +205,14 @@ function parse (xmlNode)  {
       var member = {};
       for (var attribute in xmlNode.attributes) {
         // TODO: this does not account for namespacing
+        if (attribute === "type" && xmlNode.attributes[attribute].value === "relation")
+          relationIsDependant = true;
         member[attribute] = xmlNode.attributes[attribute].value;
       }
       entry.members.push(member);
       break;
 
     case "relation":
-      inputRelations++;
       finishedReadingWays = true;
       entry = new Relation();
       entry.members = [];
@@ -209,7 +254,16 @@ function closetag (tagName) {
       break;
 
     case "relation":
-      relationQueue.push(entry);
+      if (relationIsDependant) {
+        inputDependantRelations++;
+        dependantRelationQueue.push(entry);
+        console.log("Adding dependant relation " + entry.osm_id);
+        relationIsDependant = false;
+      } else {
+        inputIndependantRelations++;
+        console.log("Adding independant relation " + entry.osm_id);
+        independantRelationQueue.push(entry);
+      }
       break;
   }
 }
@@ -244,6 +298,7 @@ function save(model, object) {
           // if we have begun processing ways, and we have just saved the last node
           if (finishedReadingNodes && outputNodes == inputNodes) {
             finishedNodes = true;
+            console.log("Finished processing " + outputNodes + " nodes");
             console.log("Starting to process the ways");
             // start processing the ways
             wayQueue.concurrency = 1;
@@ -256,17 +311,43 @@ function save(model, object) {
             console.log("Finished processing " + outputWays + " ways");
             console.log("Starting to process the relations");
             // start processing the relations
-            relationQueue.concurrency = 1;
-            relationQueue.process();
+            independantRelationQueue.concurrency = 1;
+            independantRelationQueue.process();
           }
           break;
         case "relation":
-          outputRelations++;
-          if (finishedReadingRelations && outputRelations == inputRelations) {
-            console.log("Finished processing " + outputRelations + " relations");
-            console.log("Finished");
-            mongoose.connection.close();
+          if (finishedReadingRelations) {
+            // If the processing of the independant relations has finished?
+            if (inputIndependantRelations === outputIndependantRelations) {
+              // This must be a dependant relation
+              outputDependantRelations++;
+
+              // If the processing of the dependant relations has finished
+              if (outputDependantRelations === inputDependantRelations) {
+                console.log("Finished processing " + (outputIndependantRelations + outputDependantRelations) + " relations");
+                console.log("Finished in " + startTime.fromNow(true));
+                mongoose.connection.close();
+              } else {
+                // Process the next dependant relation
+                processRelation(dependantRelationQueue[outputDependantRelations]);
+              }
+            } else {
+              outputIndependantRelations++;
+
+              // If this is the last independant relation to be processed
+              if (inputIndependantRelations === outputIndependantRelations) {
+                // First sort the dependant relations
+                sortDependantRelations();
+                // Then start the processing
+                processRelation(dependantRelationQueue[0]);
+              }
+            }
+          } else {
+            // This must be a independant relation, as they can be processed before all the
+            // relations have been read
+            outputIndependantRelations++;
           }
+
           break;
       }
 
