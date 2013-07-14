@@ -14,7 +14,6 @@ require('date-utils');
 var startTime = new Date()
 
 require('./commandline.js')(options);
-require('./arrayHelper.js');
 
 var Node = mongoose.db.model('node');
 var Way = mongoose.db.model('way');
@@ -48,22 +47,29 @@ var wayQueue = async.queue(function (way, callback) {
   if (!!options.way.populateGeometry) {
     Node.find(
     {osm_id:{$in: way.loc.nodes}},
-    {"loc.coordinates":true, _id:false},
+    {"loc.coordinates":true, "osm_id":true, _id:false},
     function (err, doc) {
-
-      // doc = doc.matchOrder(way.loc.nodes);
 
       if (err) return console.log(err, way);
       if (!!!options.way.nodeIdList){
         way.set('loc.nodes', undefined);
       }
 
-      doc.forEach(function (elm, index) {
-        way.loc.coordinates.push(elm.loc.coordinates);
-      });
+      var i = way.loc.nodes.length;
+      var coords = [];
 
-      var coord = way.loc.coordinates;
-      isCircularLtLng = coord[0] === coord[coord.length-1];
+      for (i;i--;) {// array to match to
+        var b = doc.length;
+        for (b;b--;) {// array being matched
+          if (doc[b].osm_id == way.loc.nodes[i]) {
+            coords.unshift(doc[b].loc.coordinates);
+            continue;
+          }
+        }
+      }
+
+      way.set('loc.coordinates', coords);
+      isCircularLtLng = coords[0] === coords[coords.length-1];
 
       if (isCircularId || isCircularLtLng ) {
         way.set( 'loc.type', 'Polygon');
