@@ -79,11 +79,9 @@ module.exports = function (options) {
     }
   };
 
-
   var Node_Schema = Schema({
     _id: Number,
-    osm_id: { type:Number, unique: true },
-    updated: {type:Date, default: Date.now},
+    osm_id: { type:Number },
     type: {type:String, default:"node"},
     loc: {
       type: Object,
@@ -99,15 +97,26 @@ module.exports = function (options) {
     timestamp: Date,
     visible: Boolean,
     tags: {}
-  },{collection: nodeCollection });
+  },{collection: nodeCollection});
   db.model('node', Node_Schema);
   Node_Schema.pre('save', true, mongoose.preSaveFilter);
   Node_Schema.post('save', mongoose.postSave);
 
+  if (options.node) {
+    if (options.node.storeUpdateTime) {
+      Node_Schema.add({ updated: {type: Date, default: Date.now }});
+    }
+  }
+
+  if (options.node && options.node.mongooseVersionKey) {
+    Node_Schema.set("versionKey", options.node.mongooseVersionKey);
+  } else {
+    Node_Schema.set("versionKey", false);
+  }
+
   var Way_Schema = Schema({
     _id: Number,
-    osm_id: { type:Number, unique: true },
-    updated: {type:Date, default: Date.now},
+    osm_id: { type:Number },
     type: {type:String, default:"way"},
     loc: {
       type: { type: String },
@@ -123,15 +132,26 @@ module.exports = function (options) {
     timestamp: Date,
     visible: Boolean,
     tags: {}
-  },{collection: wayCollection });
+  },{collection: wayCollection});
   db.model('way', Way_Schema);
   Way_Schema.pre('save', true,  mongoose.preSaveFilter);
   Way_Schema.post('save', mongoose.postSave);
 
+  if (options.way) {
+    if (options.way.storeUpdateTime) {
+      Way_Schema.add({ updated: {type: Date, default: Date.now }});
+    }
+  }
+
+  if (options.way && options.way.mongooseVersionKey) {
+    Way_Schema.set("versionKey", options.way.mongooseVersionKey);
+  } else {
+    Way_Schema.set("versionKey", false);
+  }
+
   var Relation_Schema = Schema({
     _id: Number,
-    osm_id: { type:Number, unique: true },
-    updated: {type:Date, default: Date.now},
+    osm_id: { type:Number },
     type: {type:String, default:"relation"},
     loc: {},
     members: [],
@@ -144,10 +164,22 @@ module.exports = function (options) {
     osmTimeBucket: Object,
     updateTimeBucket: Object,
     tags: {}
-  },{collection: relationCollection });
+  },{collection: relationCollection, versionKey: options.mongooseVersionKey });
   db.model('relation', Relation_Schema);
   Relation_Schema.pre('save', true, mongoose.preSaveFilter);
   Relation_Schema.post('save', mongoose.postSave);
+
+  if (options.relation) {
+    if (options.relation.storeUpdateTime) {
+      Relation_Schema.add({ updated: {type: Date, default: Date.now }});
+    }
+  }
+
+  if (options.relation && options.relation.mongooseVersionKey) {
+    Relation_Schema.set("versionKey", options.relation.mongooseVersionKey);
+  } else {
+    Relation_Schema.set("versionKey", false);
+  }
 
   return mongoose;
 };
