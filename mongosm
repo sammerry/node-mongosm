@@ -160,6 +160,7 @@ function sortDependantRelations() {
 mongoose.connection.on('open', function () {
 
   console.log("Starting to process the nodes");
+  log();
   // TODO: add dots to show activity every 2 sec?
   saxStream.on("opentag", parse);
   saxStream.onclosetag = closetag;
@@ -177,6 +178,31 @@ mongoose.connection.on('open', function () {
     this._parser.resume();
   });
 });
+
+var lastOutputNodes = 0;
+var lastInputNodes = 0;
+var lastOutputWays = 0;
+var lastInputWays = 0;
+var lastOutputRelations = 0;
+var lastInputRelations = 0;
+
+function log() {
+  var nodeReadSpeed = inputNodes - lastInputNodes;
+  var nodeWriteSpeed = outputNodes - lastOutputNodes;
+  var wayReadSpeed = inputWays - lastInputWays;
+  var wayWriteSpeed = outputWays - lastOutputWays;
+
+  console.log("nodes: " + outputNodes + "/" + inputNodes + " read speed: " + nodeReadSpeed + " write speed: " + nodeWriteSpeed);
+  console.log("ways: " + outputWays + "/" + inputWays + " read speed: " + wayReadSpeed + " write speed: " + wayWriteSpeed);
+  console.log("relations: " + (outputDependantRelations + outputIndependantRelations) + "/" + (inputDependantRelations + inputIndependantRelations));
+
+  lastOutputNodes = outputNodes;
+  lastInputNodes = inputNodes;
+  lastOutputWays = outputWays;
+  lastInputWays = inputWays;
+
+  setTimeout(log, 1000);
+}
 
 function parse (xmlNode)  {
 
