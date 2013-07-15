@@ -290,11 +290,10 @@ function closetag (tagName) {
       if (relationIsDependant) {
         inputDependantRelations++;
         dependantRelationQueue.push(entry);
-        console.log("Adding dependant relation " + entry.osm_id);
+        // Set to false as default for next relation
         relationIsDependant = false;
       } else {
         inputIndependantRelations++;
-        console.log("Adding independant relation " + entry.osm_id);
         independantRelationQueue.push(entry);
       }
       break;
