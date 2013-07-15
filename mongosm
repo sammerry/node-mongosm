@@ -41,52 +41,69 @@ var outputIndependantRelations = 0;
 var models = { node: Node, way: Way, relation: Relation };
 
 var wayQueue = async.queue(function (way, callback) {
-  var isCircularId = way.loc.nodes[0] === way.loc.nodes[way.loc.nodes.length-1];
-  var isCircularLtLng = false;
 
   if (!!options.way.populateGeometry) {
+    if (options.useOriginalID) {
+      var query = {_id: {$in: way.loc.nodes}};
+      var select = {_id:true, "loc.coordinates": true};
+    } else {
+      var query = {osm_id:{$in: way.loc.nodes} };
+      var select = {osm_id:true, "loc.coordinates": true};
+    }
     Node.find(
-    {osm_id:{$in: way.loc.nodes}},
-    {"loc.coordinates":true, "osm_id":true, _id:false},
-    function (err, doc) {
+      query,
+      select,
+      function (err, doc) {
 
-      if (err) return console.log(err, way);
-      if (!!!options.way.nodeIdList){
-        way.set('loc.nodes', undefined);
-      }
+        if (err) return console.log(err, way);
+        if (!!!options.way.nodeIdList){
+          way.set('loc.nodes', undefined);
+        }
 
-      var i = way.loc.nodes.length;
-      var coords = [];
+        var i = way.loc.nodes.length;
+        var coords = [];
 
-      for (i;i--;) {// array to match to
-        var b = doc.length;
-        for (b;b--;) {// array being matched
-          if (doc[b].osm_id == way.loc.nodes[i]) {
-            coords.unshift(doc[b].loc.coordinates);
-            continue;
+        for (i;i--;) {// array to match to
+          var b = doc.length;
+          for (b;b--;) {// array being matched
+            var nodeID = way.loc.nodes[i];
+            if (options.useOriginalID) {
+              if (doc[b]._id === nodeID) {
+                coords.unshift(doc[b].loc.coordinates);
+                continue;
+              }
+            } else {
+              if (doc[b].osm_id === nodeID) {
+                coords.unshift(doc[b].loc.coordinates);
+                continue;
+              }
+            }
           }
         }
+
+        way.set('loc.coordinates', coords);
+
+        var isCircularId = way.loc.nodes[0] === way.loc.nodes[way.loc.nodes.length-1];
+        var isCircularLtLng = coords[0] === coords[coords.length-1];
+
+        if (isCircularId || isCircularLtLng ) {
+          way.set( 'loc.type', 'Polygon');
+        } else {
+          way.set( 'loc.type', 'LineString');
+        }
+
+        save(Way, way);
+        callback();
       }
-
-      way.set('loc.coordinates', coords);
-      isCircularLtLng = coords[0] === coords[coords.length-1];
-
-      if (isCircularId || isCircularLtLng ) {
-        way.set( 'loc.type', 'Polygon');
-      } else {
-        way.set( 'loc.type', 'LineString');
-      }
-
-      save(Way, way);
-    });
+    );
   } else {
     if (!!!options.way.nodeIdList){
       way.set('loc.nodes', undefined);
     }
 
     save(Way, way);
+    callback();
   }
-  callback();
 }, 0);
 
 function processRelation(relation) {
@@ -351,7 +368,7 @@ function save(model, object) {
             console.log("Finished processing " + outputNodes + " nodes");
             console.log("Starting to process the ways");
             // start processing the ways
-            wayQueue.concurrency = 1;
+            wayQueue.concurrency = 5000;
             wayQueue.process();
           }
           break;
