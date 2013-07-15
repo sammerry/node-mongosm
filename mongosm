@@ -406,9 +406,9 @@ function save(model, object) {
                   sortDependantRelations();
                   // Then start the processing
                   processRelation(dependantRelationQueue[0]);
+                } else {
+                  end();
                 }
-              } else {
-                end();
               }
             }
           } else {
