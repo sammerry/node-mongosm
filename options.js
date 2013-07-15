@@ -8,22 +8,28 @@ module.exports = {
   port: "27017",
   database: "test",
   suppressErrors: false,
-  useOriginalID: false,
+  useOriginalID: true,
   upsert: false,
   xmlns: true,
   strict: false,
   lowercase:true,
-  singleCollection: true,
+  singleCollection: false,
   timeBucket: false,
   node: {
-    ignoreAttributes: []
+    keepAttributes: ['_id', 'tags', 'loc'],
+    mongooseVersionKey: false,
+    storeUpdateTime: false
   },
   way: {
-    ignoreAttributes: [],
+    keepAttributes: ['_id', 'tags', 'loc'],
     populateGeometry: true,
-    nodeIdList: true
+    nodeIdList: true,
+    mongooseVersionKey: false,
+    storeUpdateTime: false
   },
   relation: {
-    ignoreAttributes: []
+    keepAttributes: ['_id', 'tags', 'loc', 'members'],
+    mongooseVersionKey: false,
+    storeUpdateTime: false
   }
 };

@@ -14,7 +14,6 @@ require('date-utils');
 var startTime = new Date()
 
 require('./commandline.js')(options);
-require('./arrayHelper.js');
 
 var Node = mongoose.db.model('node');
 var Way = mongoose.db.model('way');
@@ -42,45 +41,69 @@ var outputIndependantRelations = 0;
 var models = { node: Node, way: Way, relation: Relation };
 
 var wayQueue = async.queue(function (way, callback) {
-  var isCircularId = way.loc.nodes[0] === way.loc.nodes[way.loc.nodes.length-1];
-  var isCircularLtLng = false;
 
   if (!!options.way.populateGeometry) {
+    if (options.useOriginalID) {
+      var query = {_id: {$in: way.loc.nodes}};
+      var select = {_id:true, "loc.coordinates": true};
+    } else {
+      var query = {osm_id:{$in: way.loc.nodes} };
+      var select = {osm_id:true, "loc.coordinates": true};
+    }
     Node.find(
-    {osm_id:{$in: way.loc.nodes}},
-    {"loc.coordinates":true, _id:false},
-    function (err, doc) {
+      query,
+      select,
+      function (err, doc) {
 
-      // doc = doc.matchOrder(way.loc.nodes);
+        if (err) return console.log(err, way);
+        if (!!!options.way.nodeIdList){
+          way.set('loc.nodes', undefined);
+        }
 
-      if (err) return console.log(err, way);
-      if (!!!options.way.nodeIdList){
-        way.set('loc.nodes', undefined);
+        var i = way.loc.nodes.length;
+        var coords = [];
+
+        for (i;i--;) {// array to match to
+          var b = doc.length;
+          for (b;b--;) {// array being matched
+            var nodeID = way.loc.nodes[i];
+            if (options.useOriginalID) {
+              if (doc[b]._id === nodeID) {
+                coords.unshift(doc[b].loc.coordinates);
+                continue;
+              }
+            } else {
+              if (doc[b].osm_id === nodeID) {
+                coords.unshift(doc[b].loc.coordinates);
+                continue;
+              }
+            }
+          }
+        }
+
+        way.set('loc.coordinates', coords);
+
+        var isCircularId = way.loc.nodes[0] === way.loc.nodes[way.loc.nodes.length-1];
+        var isCircularLtLng = coords[0] === coords[coords.length-1];
+
+        if (isCircularId || isCircularLtLng ) {
+          way.set( 'loc.type', 'Polygon');
+        } else {
+          way.set( 'loc.type', 'LineString');
+        }
+
+        save(Way, way);
+        callback();
       }
-
-      doc.forEach(function (elm, index) {
-        way.loc.coordinates.push(elm.loc.coordinates);
-      });
-
-      var coord = way.loc.coordinates;
-      isCircularLtLng = coord[0] === coord[coord.length-1];
-
-      if (isCircularId || isCircularLtLng ) {
-        way.set( 'loc.type', 'Polygon');
-      } else {
-        way.set( 'loc.type', 'LineString');
-      }
-
-      save(Way, way);
-    });
+    );
   } else {
     if (!!!options.way.nodeIdList){
       way.set('loc.nodes', undefined);
     }
 
     save(Way, way);
+    callback();
   }
-  callback();
 }, 0);
 
 function processRelation(relation) {
@@ -107,7 +130,7 @@ function processRelation(relation) {
         // TODO: Slightly non standard here as the above feature contains a role?
         counter--;
         if (counter == 0) {
-          entry.set("loc", { type: "FeatureCollection", features: features });
+          relation.set("loc", { type: "FeatureCollection", features: features });
           save(Relation, relation);
         }
       });
@@ -154,6 +177,7 @@ function sortDependantRelations() {
 mongoose.connection.on('open', function () {
 
   console.log("Starting to process the nodes");
+  log();
   // TODO: add dots to show activity every 2 sec?
   saxStream.on("opentag", parse);
   saxStream.onclosetag = closetag;
@@ -171,6 +195,31 @@ mongoose.connection.on('open', function () {
     this._parser.resume();
   });
 });
+
+var lastOutputNodes = 0;
+var lastInputNodes = 0;
+var lastOutputWays = 0;
+var lastInputWays = 0;
+var lastOutputRelations = 0;
+var lastInputRelations = 0;
+
+function log() {
+  var nodeReadSpeed = inputNodes - lastInputNodes;
+  var nodeWriteSpeed = outputNodes - lastOutputNodes;
+  var wayReadSpeed = inputWays - lastInputWays;
+  var wayWriteSpeed = outputWays - lastOutputWays;
+
+  console.log("nodes: " + outputNodes + "/" + inputNodes + " read speed: " + nodeReadSpeed + " write speed: " + nodeWriteSpeed);
+  console.log("ways: " + outputWays + "/" + inputWays + " read speed: " + wayReadSpeed + " write speed: " + wayWriteSpeed);
+  console.log("relations: " + (outputDependantRelations + outputIndependantRelations) + "/" + (inputDependantRelations + inputIndependantRelations));
+
+  lastOutputNodes = outputNodes;
+  lastInputNodes = inputNodes;
+  lastOutputWays = outputWays;
+  lastInputWays = inputWays;
+
+  setTimeout(log, 1000);
+}
 
 function parse (xmlNode)  {
 
@@ -258,11 +307,10 @@ function closetag (tagName) {
       if (relationIsDependant) {
         inputDependantRelations++;
         dependantRelationQueue.push(entry);
-        console.log("Adding dependant relation " + entry.osm_id);
+        // Set to false as default for next relation
         relationIsDependant = false;
       } else {
         inputIndependantRelations++;
-        console.log("Adding independant relation " + entry.osm_id);
         independantRelationQueue.push(entry);
       }
       break;
@@ -311,8 +359,8 @@ function save(model, object) {
     object.save(function(err) {
       if (err)
         console.log(err);
-      switch(object.type) {
-        case "node":
+      switch(model) {
+        case Node:
           outputNodes++;
           // if we have begun processing ways, and we have just saved the last node
           if (finishedReadingNodes && outputNodes == inputNodes) {
@@ -320,11 +368,11 @@ function save(model, object) {
             console.log("Finished processing " + outputNodes + " nodes");
             console.log("Starting to process the ways");
             // start processing the ways
-            wayQueue.concurrency = 1;
+            wayQueue.concurrency = 5000;
             wayQueue.process();
           }
           break;
-        case "way":
+        case Way:
           outputWays++;
           if (finishedReadingWays && outputWays == inputWays) {
             console.log("Finished processing " + outputWays + " ways");
@@ -334,7 +382,7 @@ function save(model, object) {
             independantRelationQueue.process();
           }
           break;
-        case "relation":
+        case Relation:
           if (finishedReadingRelations) {
             // If the processing of the independant relations has finished?
             if (inputIndependantRelations === outputIndependantRelations) {
@@ -358,9 +406,9 @@ function save(model, object) {
                   sortDependantRelations();
                   // Then start the processing
                   processRelation(dependantRelationQueue[0]);
+                } else {
+                  end();
                 }
-              } else {
-                end();
               }
             }
           } else {
