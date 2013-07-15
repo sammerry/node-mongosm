@@ -16,7 +16,7 @@ module.exports = function (options) {
     options.mongoose
   );
 
-  if (!!options.singleCollection) {
+  if (!options.singleCollection) {
     nodeCollection = 'nodes';
     wayCollection = 'ways';
     relationCollection = 'relations';
