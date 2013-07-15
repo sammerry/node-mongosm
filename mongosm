@@ -113,7 +113,7 @@ function processRelation(relation) {
         // TODO: Slightly non standard here as the above feature contains a role?
         counter--;
         if (counter == 0) {
-          entry.set("loc", { type: "FeatureCollection", features: features });
+          relation.set("loc", { type: "FeatureCollection", features: features });
           save(Relation, relation);
         }
       });
