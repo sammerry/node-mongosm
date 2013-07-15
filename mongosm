@@ -317,8 +317,8 @@ function save(model, object) {
     object.save(function(err) {
       if (err)
         console.log(err);
-      switch(object.type) {
-        case "node":
+      switch(model) {
+        case Node:
           outputNodes++;
           // if we have begun processing ways, and we have just saved the last node
           if (finishedReadingNodes && outputNodes == inputNodes) {
@@ -330,7 +330,7 @@ function save(model, object) {
             wayQueue.process();
           }
           break;
-        case "way":
+        case Way:
           outputWays++;
           if (finishedReadingWays && outputWays == inputWays) {
             console.log("Finished processing " + outputWays + " ways");
@@ -340,7 +340,7 @@ function save(model, object) {
             independantRelationQueue.process();
           }
           break;
-        case "relation":
+        case Relation:
           if (finishedReadingRelations) {
             // If the processing of the independant relations has finished?
             if (inputIndependantRelations === outputIndependantRelations) {
