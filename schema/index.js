@@ -51,13 +51,13 @@ module.exports = function (options) {
   });
 
   mongoose.preSaveFilter = function (next, done) {
-    if (options[this.type] && options[this.type].keepAttributes) keepAttribute(this);
-    if (options[this.type] && options[this.type].ignoreAttributes) ignoreAttribute(this);
-
     if (options.useOriginalID === true) {
       this.set("_id",  this.osm_id);
       this.set("osm_id",  undefined);
     }
+
+    if (options[this.type] && options[this.type].keepAttributes) keepAttribute(this);
+    if (options[this.type] && options[this.type].ignoreAttributes) ignoreAttribute(this);
 
     if (!!options.timeBucket) {
       var date = new Date(this.timestamp);
