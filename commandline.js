@@ -14,7 +14,7 @@ module.exports = function () {
         case "-l":
           options.lowercase = true;
           break;
-        case "-u":
+        case "-upsert":
           options.upsert = true;
           break;
         case "-s":
@@ -58,6 +58,9 @@ module.exports = function () {
           break;
         case "-db":
           options.database = array.splice(index+1,1)[0];
+          break;
+        case "-wg":
+          options.populateGeometry = true;
           break;
         default:
           logHelp();

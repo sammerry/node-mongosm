@@ -5,15 +5,17 @@
 var fs = require("fs"),
     options = require('./options.js');
 
+require('./commandline.js')(options);
+require('date-utils');
+
 var mongoose = require("./schema/index.js")(options),
+    queue = require("./queue.js")(options);
     saxStream = require("sax").createStream(options.strict, options),
     async = require("async");
 
-require('date-utils');
 
 var startTime = new Date()
 
-require('./commandline.js')(options);
 
 var Node = mongoose.db.model('node');
 var Way = mongoose.db.model('way');
@@ -178,7 +180,6 @@ mongoose.connection.on('open', function () {
 
   console.log("Starting to process the nodes");
   log();
-  // TODO: add dots to show activity every 2 sec?
   saxStream.on("opentag", parse);
   saxStream.onclosetag = closetag;
   fs.createReadStream(options.filename)
@@ -293,14 +294,11 @@ function closetag (tagName) {
   switch(tagName)
   {
     case "node":
-      var node = entry;
-      node.set("loc.type", "Point");
-      save(Node, node);
+      queue.node.push(entry);
       break;
 
     case "way":
-      wayQueue.push(entry);
-      finishedWays = true;
+      queue.way.push(entry);
       break;
 
     case "relation":
@@ -348,40 +346,10 @@ function end() {
 // should also be given as this is used to update (if required).
 function save(model, object) {
   if (options.upsert === true) {
-    var value = object.toObject();
-    var query = options.useOriginalID ? { _id: value._id } : { osm_id: value.osm_id };
-    delete value._id;
-    model.findOneAndUpdate(query, value, {upsert: true}, function(err) {
-      if (err)
-        console.log(err);
-    });
   } else {
     object.save(function(err) {
-      if (err)
-        console.log(err);
+      if (err) console.log(err);
       switch(model) {
-        case Node:
-          outputNodes++;
-          // if we have begun processing ways, and we have just saved the last node
-          if (finishedReadingNodes && outputNodes == inputNodes) {
-            finishedNodes = true;
-            console.log("Finished processing " + outputNodes + " nodes");
-            console.log("Starting to process the ways");
-            // start processing the ways
-            wayQueue.concurrency = 5000;
-            wayQueue.process();
-          }
-          break;
-        case Way:
-          outputWays++;
-          if (finishedReadingWays && outputWays == inputWays) {
-            console.log("Finished processing " + outputWays + " ways");
-            console.log("Starting to process the relations");
-            // start processing the relations
-            independantRelationQueue.concurrency = 1;
-            independantRelationQueue.process();
-          }
-          break;
         case Relation:
           if (finishedReadingRelations) {
             // If the processing of the independant relations has finished?
