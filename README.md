@@ -1,39 +1,47 @@
-node-mongosm
+Node-Mongosm
 ============
 
-This package will convert .osm files from Open Street Map and save / upsert new entries to your personal instance of mongoDB.
+Node-mongosm will convert .osm files from Open Street Map and save / upsert new entries to your local or external mongodb instance.
 
 ##Installation
 
-ensure you have mongoDB installed on your system and Install dependencies via npm.
+Install the latest stable build from npm.
+```
+npm install mongosm
+```
 
+Optionally you can install the latest from this repo by cloning and
+installing with the -d option.
 ```
 npm install -d
 ```
 
 ##Run
 
-In options.js set the {filename: "your_file.osm"} and run the app.
+With the standard installation of Mongodb you can start parsing from the command line
+```
+mongod &
+./mongosm -v -f "your-file.osm"
+```
+
+Alternatively in lib/options.js set the {filename: "your_file.osm"} and run the app.
 You will also want to set {upsert: true/false} to your needs.
 
-note: if upsert = false, documents which already exist in the database will not be modefied
+note: if upsert = false, documents which already exist in the database will not be modified
 and will not be printed out in verbose mode.
 
 ```
 node mongosm
 ```
 
-alternatively you can run it from the commandline with
-```
-./mongosm -v -f "your-file.osm"
-```
+All Mongoose [options](http://mongoosejs.com/docs/connections.html) are passed to mongoose connection, from the options.mongoose object. Uploading to an external database can be achieved by adding any settings to the mongoose: {} object in options.js
 
 ##Command-line Flags
 ```
   -v verbose
   -f file path
   -l to lowercase
-  -u upcert all entries : defaults to save
+  -upsert upcert all entries : defaults to save
   -s suppress errors
   -host host name
   -port port
@@ -44,29 +52,13 @@ alternatively you can run it from the commandline with
   -k document filter: removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
   -i document filter: includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp
   -db database
+  -tb use time bucketing.
   -h help
 ```
 
 ## Options
 
-Commandline options are generally preferred, but option defaults may be manually set in the [options.js](https://github.com/sammerry/node-mongosm/blob/master/options.js) file.
-
-Standard Options:
-```
-  verbose: false
-  filename: "example-osm/way.osm"
-  host: "localhost"
-  port: "27017"
-  database: "test"
-  suppressErrors: false
-  useOriginalID: false
-  upsert: false
-  xmlns: true
-  strict: false
-  lowercase: true
-  singleCollection: false
-  timeBucket: false
-```
+Command line options are generally preferred, but option defaults may be manually set in the [options.js](https://github.com/sammerry/node-mongosm/blob/master/options.js) file.
 
 Document Filter Options:
 ```
@@ -81,7 +73,7 @@ Way Specific Options:
   nodes: false // include the array of node references that make up the way
 ```
 
-Databse Options:
+Database Options:
 
 All [Mongoose options](http://mongoosejs.com/docs/connections.html) are supported from options.mongoose in  [options.js](https://github.com/sammerry/node-mongosm/blob/master/options.js).
 
@@ -114,8 +106,8 @@ Searches for all entries in january of 2009 would look like.
 db.geo.find({'osmTimeBucket.2009.01':{$exists:true}});
 ```
 
-##Wishlist
+##Wish-list
 
-- Retry once on insert failure
 - Testing vs sample .osm files
 - Support for multiple files
+
