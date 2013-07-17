@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Node-mongosm by sammerry</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Node-mongosm</h1>
+        <h2>Parse and push .osm files to Mongodb.</h2>
+        <a href="https://github.com/sammerry/node-mongosm" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="node-mongosm" class="anchor" href="#node-mongosm"><span class="octicon octicon-link"></span></a>Node-Mongosm</h1>
+
+<p>Node-mongosm will convert .osm files from Open Street Map and save / upsert new entries to your local or external mongodb instance.</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Install the latest stable build from npm.</p>
+
+<pre><code>npm install mongosm
+</code></pre>
+
+<p>Optionally you can install the latest from this repo by cloning and
+installing with the -d option.</p>
+
+<pre><code>npm install -d
+</code></pre>
+
+<h2>
+<a name="run" class="anchor" href="#run"><span class="octicon octicon-link"></span></a>Run</h2>
+
+<p>With the standard installation of Mongodb you can start parsing from the command line</p>
+
+<pre><code>mongod &amp;
+./mongosm -v -f "your-file.osm"
+</code></pre>
+
+<p>Alternatively in lib/options.js set the {filename: "your_file.osm"} and run the app.
+You will also want to set {upsert: true/false} to your needs.</p>
+
+<p>note: if upsert = false, documents which already exist in the database will not be modified
+and will not be printed out in verbose mode.</p>
+
+<pre><code>node mongosm
+</code></pre>
+
+<p>All Mongoose <a href="http://mongoosejs.com/docs/connections.html">options</a> are passed to mongoose connection, from the options.mongoose object. Uploading to an external database can be achieved by adding any settings to the mongoose: {} object in options.js</p>
+
+<h2>
+<a name="command-line-flags" class="anchor" href="#command-line-flags"><span class="octicon octicon-link"></span></a>Command-line Flags</h2>
+
+<pre><code>  -v verbose
+  -f file path
+  -l to lowercase
+  -upsert upcert all entries : defaults to save
+  -s suppress errors
+  -host host name
+  -port port
+  -u set db username
+  -p set db password
+  -tb use time bucketing.
+  -sc place all nodes, ways and relations in the same collection.
+  -k document filter: removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
+  -i document filter: includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp
+  -db database
+  -tb use time bucketing.
+  -h help
+</code></pre>
+
+<h2>
+<a name="options" class="anchor" href="#options"><span class="octicon octicon-link"></span></a>Options</h2>
+
+<p>Command line options are generally preferred, but option defaults may be manually set in the <a href="https://github.com/sammerry/node-mongosm/blob/master/options.js">options.js</a> file.</p>
+
+<p>Document Filter Options:</p>
+
+<pre><code>  ignoreAttributes: []  // items to excluded
+  keepAttributes: [] // strict list of items to include
+</code></pre>
+
+<p>only one document filter type should be needed</p>
+
+<p>Way Specific Options:</p>
+
+<pre><code>  geometry: true // include the generated LineString or Polygon
+  nodes: false // include the array of node references that make up the way
+</code></pre>
+
+<p>Database Options:</p>
+
+<p>All <a href="http://mongoosejs.com/docs/connections.html">Mongoose options</a> are supported from options.mongoose in  <a href="https://github.com/sammerry/node-mongosm/blob/master/options.js">options.js</a>.</p>
+
+<h2>
+<a name="document-filtering" class="anchor" href="#document-filtering"><span class="octicon octicon-link"></span></a>Document Filtering</h2>
+
+<p>By setting the options ignoreAttributes, keepAttributes per node, way or
+relation you can filter the document pre save. The options should be
+provided an array of the key names which are to be effected. This can also be achieved
+by using the -k or -i command line flag in the following format :,.</p>
+
+<p>Via Command Line:</p>
+
+<pre><code>./mongosm -v -k way:loc,user
+</code></pre>
+
+<p>Via Options:</p>
+
+<pre><code>way {
+  keepAttributes: ['loc','user']
+}
+</code></pre>
+
+<h2>
+<a name="time-stamp-bucketing" class="anchor" href="#time-stamp-bucketing"><span class="octicon octicon-link"></span></a>Time Stamp Bucketing</h2>
+
+<p>When run with the timeBucket option to true or the -tb flag. You can search
+and index via day month or year much more efficiently with an $exists operator.</p>
+
+<p>Searches for all entries in january of 2009 would look like.</p>
+
+<pre><code>db.geo.find({'osmTimeBucket.2009.01':{$exists:true}});
+</code></pre>
+
+<h2>
+<a name="wish-list" class="anchor" href="#wish-list"><span class="octicon octicon-link"></span></a>Wish-list</h2>
+
+<ul>
+<li>Testing vs sample .osm files</li>
+<li>Support for multiple files</li>
+</ul>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/sammerry/node-mongosm/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/sammerry/node-mongosm/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/sammerry/node-mongosm"></a> is maintained by <a href="https://github.com/sammerry">sammerry</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-42543746-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
