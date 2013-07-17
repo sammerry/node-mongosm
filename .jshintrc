@@ -7,6 +7,10 @@
     "console": false,
     "module": false,
     "exports": false,
+    "setTimeout": false,
+    "setInterval": false,
+    "clearInterval": false,
+    "process": false,
     "__dirname": false
   }
 }
