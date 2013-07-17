@@ -98,7 +98,7 @@ way {
 
 ##Time Stamp Bucketing
 
-When run with the timeBucket option to true or the -tb flag. You can efficiently search
+When run with the timeBucket option to true or the -tb flag. You can search
 and index via day month or year much more efficiently with an $exists operator.
 
 Searches for all entries in january of 2009 would look like.
