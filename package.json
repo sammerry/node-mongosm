@@ -23,15 +23,15 @@
       "url": "https://github.com/sammerry/node-mongosm"
     },
     "bin": "./mongosm",
-    "contributors": [ 
+    "contributors": [
       {
-        "name": "Sam Mery",
+        "name": "Sam Merry",
         "email": "sam.merry@gmail.com"
       },
       {
-        "name": "Christopher Banes",
+        "name": "Christopher Baines",
         "email": "cbaines8@gmail.com"
-      } 
+      }
     ],
     "author": "Sam Merry",
     "license": "MIT"
