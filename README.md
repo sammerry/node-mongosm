@@ -1,7 +1,7 @@
 Node-Mongosm
 ============
 
-Node-mongosm will convert .osm files from Open Street Map and save / upsert new entries to your local or external mongodb instance.
+Node-mongosm is a stepping stone. It bridges the gap from raw .osm file xml to MongoDB via a simple commandline interface.
 
 ##Installation
 
@@ -21,7 +21,7 @@ npm install -d
 With the standard installation of Mongodb you can start parsing from the command line
 ```
 mongod &
-./mongosm -v -f "your-file.osm"
+mongosm -v -f "your-file.osm"
 ```
 
 Alternatively in lib/options.js set the {filename: "your_file.osm"} and run the app.
@@ -39,20 +39,19 @@ All Mongoose [options](http://mongoosejs.com/docs/connections.html) are passed t
 ##Command-line Flags
 ```
   -v verbose
-  -f file path
   -l to lowercase
-  -upsert upcert all entries : defaults to save
+  -f file path
   -s suppress errors
+  -upsert upcert all entries : defaults to save
+  -tb use timebucketing for osm timestamp and update timestamp
+  -sc places all nodes, ways and relations in the 'geo' collection
+  -k removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
+  -i includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp
   -host host name
-  -port port
-  -u set db username
-  -p set db password
-  -tb use time bucketing.
-  -sc place all nodes, ways and relations in the same collection.
-  -k document filter: removes all attributes except ones supplied in comma separated list EX: -k way:user,timestamp
-  -i document filter: includes all attributes except ones supplied in comma separated list EX: -i way:user,timestamp
   -db database
-  -tb use time bucketing.
+  -u username
+  -p password
+  -port port
   -h help
 ```
 
