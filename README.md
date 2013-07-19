@@ -5,7 +5,8 @@ Node-mongosm is a stepping stone. It bridges the gap from raw .osm file xml to M
 
 ##Installation
 
-Install the latest stable build from npm.
+Install the latest stable build from npm. This will install the mongosm
+executable to your path for easy command line use.
 ```
 npm install mongosm
 ```
