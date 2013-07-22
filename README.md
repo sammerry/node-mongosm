@@ -106,6 +106,14 @@ Searches for all entries in january of 2009 would look like.
 db.geo.find({'osmTimeBucket.2009.01':{$exists:true}});
 ```
 
+##Pipe
+
+Instead of downloading and storing the latest .osm file you can directly
+pipe data from the OSM API.
+```
+curl "http://www.openstreetmap.org/api/0.6/node/1" | ./mongosm -upsert
+```
+
 ##Wish-list
 
 - Testing vs sample .osm files
