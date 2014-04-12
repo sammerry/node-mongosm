@@ -1,45 +1,48 @@
 {
-    "name": "mongosm",
-    "version": "0.0.5",
-    "private": false,
-    "dependencies": {
-        "mongoose": "3.6.14",
-        "sax": "0.5.4",
-        "date-utils": "1.2.13",
-        "async": "0.2.9"
-    },
-    "description": "Parse and push .osm files to Mongodb",
-    "main": "mongosm",
-    "scripts": {
-        "start": "node mongosm",
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "engines": {
-        "node": "0.11.2",
-        "npm": "1.2.21"
-    },
-    "repository": {
-      "type": "git",
-      "url": "https://github.com/sammerry/node-mongosm"
-    },
-    "bugs": {
-      "url": "https://github.com/sammerry/node-mongosm/issues"
-    },
-    "licenses": [{
+  "name": "mongosm",
+  "version": "0.0.5",
+  "private": false,
+  "dependencies": {
+    "mongoose": "3.6.14",
+    "sax": "0.5.4",
+    "date-utils": "1.2.13",
+    "async": "0.2.9",
+    "memwatch": "~0.2.2"
+  },
+  "description": "Parse and push .osm files to Mongodb",
+  "main": "mongosm",
+  "scripts": {
+    "start": "node mongosm",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "0.11.2",
+    "npm": "1.2.21"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sammerry/node-mongosm"
+  },
+  "bugs": {
+    "url": "https://github.com/sammerry/node-mongosm/issues"
+  },
+  "licenses": [
+    {
       "type": "MIT",
       "url": "https://github.com/sammerry/node-mongosm/blob/master/License-MIT"
-    }],
-    "bin": "./mongosm",
-    "contributors": [
-      {
-        "name": "Sam Merry",
-        "email": "sam.merry@gmail.com"
-      },
-      {
-        "name": "Christopher Baines",
-        "email": "cbaines8@gmail.com"
-      }
-    ],
-    "author": "Sam Merry",
-    "license": "MIT"
+    }
+  ],
+  "bin": "./mongosm",
+  "contributors": [
+    {
+      "name": "Sam Merry",
+      "email": "sam.merry@gmail.com"
+    },
+    {
+      "name": "Christopher Baines",
+      "email": "cbaines8@gmail.com"
+    }
+  ],
+  "author": "Sam Merry",
+  "license": "MIT"
 }
